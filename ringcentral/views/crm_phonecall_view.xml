@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <data>
+        <record model="ir.ui.view" id="inherited_phcall_partner_view">
+            <field name="name">inherited.phcall.partner.view</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form" />
+            <field name="arch" type="xml">
+                <page name="internal_notes" position="after">
+                    <page string="Phone Log">
+                        <field name="ph_log_ids" nolabel="1" />
+                    </page>
+                    <page string="Message Log">
+                        <field name="msg_log_ids" />
+                    </page>
+                </page>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="form_view_crm_phonecall_about">
+            <field name="name">form.view.crm.phonecall.about</field>
+            <field name="model">crm.phonecall.about</field>
+            <field name="arch" type="xml">
+                <form string="CRM Phonecalls About">
+                    <sheet>
+                        <group colspan="4">
+                            <field name="name" />
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="tree_view_crm_phonecall_about">
+            <field name="name">tree.view.crm.phonecall.about</field>
+            <field name="model">crm.phonecall.about</field>
+            <field name="arch" type="xml">
+                <tree string="CRM Phonecalls About" editable='top'>
+                    <field name="name" />
+                </tree>
+            </field>
+        </record>
+        <record id="action_crm_phonecall_about" model="ir.actions.act_window">
+            <field name="name">Phonecall About</field>
+            <field name="res_model">crm.phonecall.about</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+        <menuitem
+            id="menu_crm_phonecall_about_view"
+            name="Phonecalls About"
+            sequence="8"
+            parent="crm.crm_menu_root"
+            action="ringcentral.action_crm_phonecall_about"
+        />
+        <!--Phonecalls Form View -->
+        <record model="ir.ui.view" id="crm_phonecall_form_view">
+            <field name="name">CRM - Phonecalls Form</field>
+            <field name="model">crm.phonecall</field>
+            <field name="arch" type="xml">
+                <form string="CRM Phonecalls" create="0">
+                    <group colspan="4" col="4">
+                        <field name="sequence" />
+                        <field name="tag_ids" widget="many2many_tags"/>
+                        <field name="team_id" />
+                        <field name="duration" />
+                        <field name="partner_id" />
+                        <field name="check_notification" />
+                        <field name="user_id" />
+                        <field name="company_id" />
+                        <field name="in_queue" />
+                        <field name="priority" />
+                        <field name="state" />
+                        <field name="type" />
+                        <field name="description" />
+                        <field name="start_time" />
+                        <field name="partner_mobile" />
+                        <field name="date" />
+                        <field name="categ_id" />
+                        <field name="opportunity_id" />
+                        <field name="name" />
+                        <field name="partner_phone" />
+                        <field
+                            name="ringcentral_call_url"
+                            widget="audio_field"
+                            readonly="1"
+                        />
+                    </group>
+                    <notebook>
+                        <page string="Call Activity">
+                            <field name="crm_call_activity_ids" nolabel="1">
+                                <tree string="Call Activity" editable="bottom">
+                                    <field name="name" required="1" />
+                                    <field name="call_type" required="1" />
+                                    <field name="leg_type" />
+                                    <field name="from_number" />
+                                    <field name="to_number" />
+                                    <!--                                     <field name="to_user"/>
+                                    <field name="crm_phonecall_id" invisible="1"/> -->
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Attachment">
+                            <field name="attachment_ids">
+                                <tree>
+                                    <field name="name" />
+                                    <field name="datas" filename="name" />
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </form>
+            </field>
+        </record>
+        <!--Phonecalls Tree View -->
+        <record model="ir.ui.view" id="crm_phonecall_tree_view">
+            <field name="name">CRM - Phonecalls Tree</field>
+            <field name="model">crm.phonecall</field>
+            <field name="arch" type="xml">
+                <tree string="Phonecalls" create="0">
+                    <field name="date" />
+                    <field name="name" />
+                    <field name="ringcentral_message_id" />
+                    <field name="type" required="1" />
+                    <field name="tag_ids" widget="many2many_tags" />
+                    <field name="partner_id" />
+                    <field name="partner_phone" />
+                    <field
+                        name="user_id"
+                        context="{'default_groups_ref': ['base.group_user', 'base.group_partner_manager', 'base.group_sale_salesman_all_leads']}"
+                    />
+                    <field name="state" />
+                    <field name="duration" widget="float_time" />
+                    <field name="crm_phonecall_about_id" />
+                    <field name="description" />
+                    <field
+                        name="ringcentral_call_url"
+                        widget="audio_field"
+                        readonly="1"
+                    />
+                    <field name="is_recording" invisible="1" />
+                </tree>
+            </field>
+        </record>
+        <!-- Phonecalls Calendar View -->
+        <record model="ir.ui.view" id="crm_phonecall_calendar_view">
+            <field name="name">CRM - Phone Calls Calendar</field>
+            <field name="model">crm.phonecall</field>
+            <field name="priority" eval="2" />
+            <field name="arch" type="xml">
+                <calendar
+                    string="Phone Calls"
+                    date_start="date"
+                    color="user_id"
+                    date_delay="duration"
+                >
+                    <field name="name" />
+                    <field name="partner_id" />
+                </calendar>
+            </field>
+        </record>
+        <!--<record id="view_hr_payslip_filter" model="ir.ui.view">
+                <field name="name">hr.payslip.select</field>
+                <field name="model">hr.payslip</field>
+                <field name="arch" type="xml">
+                    <search string="Search Payslips">
+                        <field name="name" string="Payslips" filter_domain="['|',('name','ilike',self),('number','ilike',self)]"/>
+                        <field name="date_from"/>
+                        <filter string="Draft" name="draft" domain="[('state','=','draft')]" help="Draft Slip"/>
+                        <filter string="Done" name="done" domain="[('state','=','done')]" help="Done Slip"/>
+                        <field name="employee_id"/>
+                        <field name="payslip_run_id"/>
+                        <group expand="0" string="Group By">
+                            <filter string="Employees" name="employee_id" context="{'group_by':'employee_id'}"/>
+                            <filter string="PaySlip Batch" name="payslip_run_id" context="{'group_by':'payslip_run_id'}"/>
+                            <filter string="Companies" name="company_id" groups="base.group_multi_company" context="{'group_by':'company_id'}"/>
+                            <filter string="States" name="state" context="{'group_by':'state'}"/>
+                        </group>
+                    </search>
+                </field>
+            </record>-->
+        <!-- Phonecalls Search View  -->
+        <record id="view_crm_case_phonecalls_filter" model="ir.ui.view">
+            <field name="name">CRM - Phone Calls Search</field>
+            <field name="model">crm.phonecall</field>
+            <field name="arch" type="xml">
+                <search string="Search Phonecalls">
+                    <field name="name" string="Phonecalls" />
+                    <field name="date" />
+                    <field name="state" />
+                    <filter
+                        name="user_id"
+                        string="My Phonecalls"
+                        help=""
+                        domain="[('user_id', '=', uid)]"
+                    />
+                    <filter
+                        name="team_id.user_id"
+                        string="My Team"
+                        domain="[('team_id.user_id', '=', uid)]"
+                    />
+                    <filter
+                        help=""
+                        name="unassigned"
+                        string="Unassigned"
+                        domain="[('user_id','=','False')]"
+                    />
+                    <separator />
+                    <filter
+                        help=""
+                        name="phonecalls_to_do"
+                        string="To Do"
+                        domain="[('state','in',('open','pending'))]"
+                    />
+                    <separator />
+                    <field name="partner_id" operator="child_of" />
+                    <field name="user_id" />
+                    <field name="opportunity_id" />
+                    <field name="team_id" string="Sales Team" />
+                    <group expand="0" string="Group By">
+                        <filter
+                            help=""
+                            name="partner"
+                            string="Partner"
+                            domain="[]"
+                            context="{'group_by':'partner_id'}"
+                        />
+                        <filter
+                            help=""
+                            name="responsible"
+                            string="Responsible"
+                            domain="[]"
+                            context="{'group_by':'user_id'}"
+                        />
+                        <filter
+                            name="creation"
+                            string="Creation"
+                            help="Creation Date"
+                            domain="[]"
+                            context="{'group_by':'create_date'}"
+                        />
+                        <filter
+                            name="month"
+                            string="Month"
+                            domain="[]"
+                            context="{'group_by':'date'}"
+                            help="Calls Date by Month"
+                        />
+                    </group>
+                </search>
+            </field>
+        </record>
+        <!-- Add the menu to reach the phonecall's view-->
+        <record model="ir.actions.act_window" id="crm_phonecall_view">
+            <field name="name">Phonecalls</field>
+            <field name="res_model">crm.phonecall</field>
+            <field name="view_mode">tree,calendar,form</field>
+            <field name="view_id" ref="crm_phonecall_tree_view" />
+            <field name="domain">[]</field>
+            <field name="context" eval="{'search_default_phonecalls_to_do':1}" />
+            <field name="search_view_id" ref="view_crm_case_phonecalls_filter" />
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    Click to log the summary of a phone call.
+                </p>
+                <p>
+                    Odoo allows you to log inbound calls on the fly to track the
+                    history of the communication with a customer or to inform another
+                    team member.
+                </p>
+                <p>
+                    In order to follow up on the call, you can trigger a request for
+                    another call, a meeting or an opportunity.
+                </p>
+            </field>
+        </record>
+        <!-- wizard to change the log of calls -->
+        <!-- <record model="ir.ui.view" id="wizard_change_log_form_view">
+            <field name="name">phonecall.log.wizard.form</field>
+            <field name="model">crm.phonecall.log.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Edit the log">
+                    <group>
+                        <group>
+                            <div attrs="{'invisible': [('partner_name', '=', False)]}">
+                                <group col="4" colspan="6">
+                                    <field name="partner_image_small" widget="image" nolabel="1"
+                                           class="oe_avatar oe_left" width="10%"/>
+                                    <h2>
+                                        <field name="partner_name"/>
+                                    </h2>
+                                    <field name="tag_ids" widget="many2many_tags" required="1"/>
+                                </group>
+                                <div style="display: block;">
+                                    <field attrs="{'invisible': [('partner_email','=',False)]}" name="partner_email"/>
+                                    <div attrs="{'invisible': [('opportunity_name', '=', 'No opportunity linked')]}">
+                                        <field name="opportunity_name"/>
+                                        <span>&#160;:&#160;<field name="opportunity_planned_revenue" class="oe_inline"/>
+                                            &#160;at&#160;<field name="opportunity_probability" class="oe_inline"/>%
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </group> -->
+        <!-- <group attrs="{'invisible': [('opportunity_name', '=', 'No opportunity linked')]}">
+                            <label for="next_activity_id"/>
+                            <div class="o_row">
+                                <field name="next_activity_id"
+                                       options="{'no_create': True, 'no_open': True}"/>
+                                <field name="new_date_action" attrs="{'invisible': [('next_activity_id', '=', False)]}"
+                                       placeholder="Choose a date..."/>
+                            </div>
+                            <div class="o_row">
+                                <field name="new_title_action" placeholder="e.g. Discuss proposal"
+                                       attrs="{'invisible': [('next_activity_id', '=', False)]}"/>
+                            </div>
+                        </group> -->
+        <!-- <group>
+                            <label for="reschedule_option"/>
+                            <div>
+                                <field name="reschedule_option" widget="radio" nolabel="1"/>
+                                <field name="reschedule_date" nolabel="1"
+                                       attrs="{'invisible': [('reschedule_option', '!=', 'custom')], 'required':[('reschedule_option', '=','custom')]}"/>
+                            </div>
+                        </group>
+                    </group>
+                    <separator colspan="2" string="Call Summary"/>
+                    <field name="show_duration" attrs="{'invisible': True}"/>
+                    <field name="custom_duration" widget="float_time"
+                           attrs="{'invisible': [('show_duration', '=', False)], 'required':[('show_duration', '=',True)]}"
+                           class="oe_inline"/>
+                    <span attrs="{'invisible': [('show_duration', '=', False)], 'required':[('show_duration', '=',True)]}">
+                        min(s)
+                    </span>
+                    <group>
+                        <field name="description" nolabel="1" placeholder="Description..." required="1"/>
+                    </group>
+                    <footer>
+                        <button name="save" type="object"
+                                string="Save" class="oe_highlight"/>
+                        <button name="save_go_opportunity" type="object"
+                                attrs="{'invisible': [('opportunity_name', '=', 'No opportunity linked')]}"
+                                string="Save and Open the Opportunity" class="oe_highlight"/>
+                        <button class="oe_button oe_form_button oe_link" special="cancel" string="Discard"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+ -->
+        <!-- wizard diplaying the transfer's option -->
+        <!-- <record model="ir.ui.view" id="wizard_transfer_call_form_view">
+            <field name="name">Transfer the Call</field>
+            <field name="model">crm.phonecall.transfer.wizard</field>
+            <field name="arch" type="xml">
+                <form string="transfer Option">
+                    <group string="transfer Option">
+                        <field name="transfer_choice" widget="selection"/>
+                        <field name="transfer_number" attrs="{'invisible': ['|',('transfer_choice', '=', 'physical'), ('transfer_choice','=',False)],
+                'required': [('transfer_choice', '=', 'extern')]}"/>
+                    </group>
+                    <footer>
+                        <button name="save" type="object"
+                                string="transfer the Call" class="oe_highlight"/>
+                        or
+                        <button class="oe_button oe_form_button oe_link" special="cancel" string="Cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record> -->
+        <menuitem
+            id="menu_crm_phonecall_view"
+            name="Phonecalls"
+            sequence="7"
+            parent="crm.crm_menu_root"
+            groups="ringcentral.ringcentral_user"
+            action="ringcentral.crm_phonecall_view"
+        />
+        <!-- Main top Phonecalls Menu -->
+        <menuitem
+            name="Phonecalls"
+            id="phonecalls_main_menu"
+            groups="ringcentral.ringcentral_user"
+        />
+        <menuitem
+            action="ringcentral.crm_phonecall_view"
+            id="phonecalls_child_menu"
+            parent="ringcentral.phonecalls_main_menu"
+        />
+    </data>
+</odoo>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <template
+        id="assets_backend"
+        name="Ringcentral Assets"
+        inherit_id="web.assets_backend"
+    >
+        <xpath expr="." position="inside">
+            <script type="text/javascript" src="/ringcentral/static/src/lib/sip.js" />
+            <script type="text/javascript" src="/ringcentral/static/src/lib/fetch.js" />
+            <script
+                type="text/javascript"
+                src="/ringcentral/static/src/lib/promise.js"
+            />
+            <script
+                type="text/javascript"
+                src="/ringcentral/static/src/lib/pubnub.js"
+            />
+            <script
+                type="text/javascript"
+                src="/ringcentral/static/src/lib/ringcentral.js"
+            />
+            <script
+                type="text/javascript"
+                src="/ringcentral/static/src/lib/ringcentral-web-phone.js"
+            />
+            <link rel="stylesheet" href="/ringcentral/static/src/scss/slidemenu.scss" />
+            <link
+                rel="stylesheet"
+                href="/ringcentral/static/src/scss/custom_ringcentral.scss"
+            />
+            <link rel="stylesheet" href="/ringcentral/static/src/css/rincentral.css" />
+            <script
+                type="text/javascript"
+                src="/ringcentral/static/src/lib/jquery.slidemenu.js"
+            />
+            <script
+                type="text/javascript"
+                src="/ringcentral/static/src/js/custom_ringcentral.js"
+            />
+            <script
+                type="text/javascript"
+                src="/ringcentral/static/src/lib/ringcentral_portal_login.js"
+            />
+        </xpath>
+    </template>
+    <template id="assets_backend_1" name="audio player" inherit_id="web.assets_backend">
+        <xpath expr="." position="inside">
+            <script
+                src="/ringcentral/static/src/lib/audio_field.js"
+                type="text/javascript"
+            />
+        </xpath>
+    </template>
+    <!-- </template> -->
+</odoo>

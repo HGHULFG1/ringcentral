@@ -1,0 +1,1405 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="ringcentral.login">
+        <button
+            t-if="widget.modelName == 'crm.phonecall'"
+            type="button"
+            class=" btn btn-secondary oe_ringcentral_login"
+        >
+            Login
+        </button>
+        <button
+            t-if="widget.modelName == 'crm.phonecall'"
+            type="button"
+            class=" btn btn-secondary oe_ringcentral_sync"
+        >
+           Sync Ringcentral
+        </button>
+    </t>
+    <t t-extend="ListView.buttons">
+        <t t-jquery="button.o_list_button_discard" t-operation="after">
+            <t t-call="ringcentral.login" />
+        </t>
+    </t>
+    <t t-name="ringcentral.contacts.search">
+        <div class='row mt8'>
+            <div class='col-md-12'>
+                <input
+                    class='form-control'
+                    id='contact_search'
+                    name='search'
+                    placeholder='Search...'
+                />
+            </div>
+        </div>
+    </t>
+    <t t-name="ringcentral.message_box">
+        <div class="modal-body" id="scroll_messge">
+            <div id="messgae_contant">
+                <t t-foreach="messages" t-as="message">
+                    <t t-if="message.direction == 'Outbound'">
+                        <t t-foreach="message.to" t-as="to_phone_number">
+                            <t t-if="to_phone_number.phoneNumber == title">
+                                <div class="d-flex justify-content-end mb-4">
+                                    <div class="msg_cotainer_send">
+                                        <t t-esc="message.subject" />
+                                        <br />
+                                        <span class="msg_time_send">
+                                            <t t-esc="message.datetime" />
+                                        </span>
+                                    </div>
+                                </div>
+                                <t t-foreach="message.attachments" t-as="attchment">
+                                    <t t-if="attchment.type == 'MmsAttachment'">
+                                        <t
+                                            t-set="uri"
+                                            t-value="attchment.uri+'?access_token='+widget.access_token"
+                                        />
+                                        <div class="d-flex justify-content-end mb-4">
+                                            <div class="msg_img_cotainer_send">
+                                                <img
+                                                    t-att-src="uri"
+                                                    class="img-responsive msg_img"
+                                                    style='width:30%; height:20%'
+                                                />
+                                                <br />
+                                                <br />
+                                                <span class="msg_time_send">
+                                                    <t t-esc="message.datetime" />
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </t>
+                            </t>
+                        </t>
+                    </t>
+                    <t
+                        t-if="message.direction == 'Inbound' and message.from.phoneNumber == title"
+                    >
+                        <div class="d-flex justify-content-start mb-4">
+                            <div class="msg_cotainer">
+                                <t t-esc="message.subject" />
+                                <span class="msg_time">
+                                    <t t-esc="message.datetime" />
+                                </span>
+                            </div>
+                            <br />
+                        </div>
+                        <t t-foreach="message.attachments" t-as="attchment">
+                            <t t-if="attchment.type == 'MmsAttachment'">
+                                <t
+                                    t-set="uri"
+                                    t-value="attchment.uri+'?access_token='+widget.access_token"
+                                />
+                                <div class="d-flex justify-content-start mb-4">
+                                    <div class="msg_img_cotainer">
+                                        <img
+                                            t-att-src="uri"
+                                            class="img-responsive msg_img"
+                                            style='width:30%; height:20%'
+                                        />
+                                        <br />
+                                        <span class="msg_time">
+                                            <t t-esc="message.datetime" />
+                                        </span>
+                                    </div>
+                                </div>
+                            </t>
+                        </t>
+                    </t>
+                </t>
+            </div>
+            <div class='input-group'>
+                <input
+                    type='text'
+                    id="popup_input"
+                    name='message'
+                    class="form-control"
+                    placeholder="Type your message..."
+                />
+                <label class="btn btn-success">
+                    <input
+                        type="file"
+                        style="display:none;"
+                        id="popup_file"
+                        multiple="True"
+                    />
+                    <i class="fa fa-paperclip" />
+                </label>
+                <button class='btn btn-primary' id="send_btn" style="height: 30px;">
+                    <i class="fa fa-paper-plane-o" />
+                </button>
+                <!-- <div class='input-group-append'> -->
+                <!-- </div> -->
+            </div>
+            <div id="sorll_div">
+            </div>
+        </div>
+    </t>
+    <t t-name="ringcentral.outgoing_call">
+        <div class='row'>
+            <div class='col-md-12'>
+                <div class="row">
+                    <div class='col-md-12 text-center'>
+                        <span class="btn-group">
+                            <button class="btn btn-default mute btn-sm" title="Mute">
+                                <img
+                                    class='img img-responsive'
+                                    width='15'
+                                    height='15'
+                                    src='/ringcentral/static/src/img/mute.png'
+                                />
+                            </button>
+                            <button class="btn btn-default unmute btn-sm hidden">
+                                <img
+                                    class='img img-responsive'
+                                    width='15'
+                                    height='15'
+                                    src='/ringcentral/static/src/img/unmute.png'
+                                />
+                            </button>
+                        </span>
+                        <span class="btn-group">
+                            <button class="btn btn-default hold btn-sm" title="Hold">
+                                <img
+                                    class='img img-responsive'
+                                    width='15'
+                                    height='15'
+                                    src='/ringcentral/static/src/img/pause.png'
+                                />
+                            </button>
+                            <button
+                                class="btn btn-default unhold btn-sm hidden"
+                                title="Unhold"
+                            >
+                                <img
+                                    class='img img-responsive'
+                                    width='15'
+                                    height='15'
+                                    src='/ringcentral/static/src/img/play.png'
+                                />
+                            </button>
+                        </span>
+                        <span class="btn-group">
+                            <button
+                                class="btn btn-default startRecord btn-sm"
+                                title="Start Recording"
+                            >
+                                <img
+                                    class='img img-responsive'
+                                    width='15'
+                                    height='15'
+                                    src='/ringcentral/static/src/img/start_recording.png'
+                                />
+                            </button>
+                            <button
+                                class="btn btn-default stopRecord btn-sm hidden"
+                                title="Stop Recording"
+                            >
+                                <img
+                                    class='img img-responsive'
+                                    width='15'
+                                    height='15'
+                                    src='/ringcentral/static/src/img/stop_recording.png'
+                                />
+                            </button>
+                        </span>
+                        <span class="btn-group">
+                            <button
+                                class="btn btn-default park btn-sm park"
+                                title="Park"
+                            >
+                                <img
+                                    class='img img-responsive'
+                                    width='15'
+                                    height='15'
+                                    src='/ringcentral/static/src/img/park.png'
+                                />
+                            </button>
+                        </span>
+                        <span class="btn-group">
+                            <button class="btn btn-danger btn-sm hangup" title="Hangup">
+                                <img
+                                    class='img img-responsive'
+                                    width='15'
+                                    height='15'
+                                    src='/ringcentral/static/src/img/hangup.png'
+                                />
+                            </button>
+                        </span>
+                    </div>
+                </div>
+                <ul class="nav" role="tablist">
+                    <li role="presentation" class="nav-item active">
+                        <a
+                            href="#flip"
+                            aria-controls="flip"
+                            class="nav-link"
+                            role="tab"
+                            data-toggle="tab"
+                        >Flip</a>
+                    </li>
+                    <li role="presentation" class="nav-item">
+                        <a
+                            href="#transfer"
+                            aria-controls="transfer"
+                            class="nav-link"
+                            role="tab"
+                            data-toggle="tab"
+                        >Transfer</a>
+                    </li>
+                    <li role="presentation" class="nav-item">
+                        <a
+                            href="#dtmf"
+                            aria-controls="fax"
+                            role="tab"
+                            class="nav-link"
+                            data-toggle="tab"
+                        >DTMF</a>
+                    </li>
+                    <li role="presentation" class="nav-item">
+                        <a
+                            href="#customer"
+                            aria-controls="fax"
+                            class="nav-link"
+                            role="tab"
+                            data-toggle="tab"
+                        >Details</a>
+                    </li>
+                    <li role="presentation" class="nav-item">
+                        <a
+                            href="#customer"
+                            aria-controls="fax"
+                            class="nav-link"
+                            role="tab"
+                            data-toggle="tab"
+                        >Open Contact Details</a>
+                    </li>
+                </ul>
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="flip">
+                        <div class='text-center'>
+                            <form class="form-inline flip-form">
+                                <div class="input-group select_folder_name mt8">
+                                    <input
+                                        type="text"
+                                        class="form-control input-sm"
+                                        name="flip"
+                                        placeholder="1 ... 8"
+                                    />
+                                    <span class="input-group-btn">
+                                        <button
+                                            class="btn btn-primary btn-sm"
+                                            style='font-size: 12px;'
+                                            type="submit"
+                                        >Flip</button>
+                                    </span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="transfer">
+                        <div class='text-center'>
+                            <form class="form-inline transfer-form">
+                                <div class="input-group select_folder_name mt8">
+                                    <input
+                                        type="text"
+                                        class="form-control input-sm"
+                                        name="transfer"
+                                        placeholder="+12345678900"
+                                    />
+                                    <span class="input-group-btn">
+                                        <button
+                                            class="btn btn-primary btn-sm"
+                                            style='font-size: 12px;'
+                                            type="submit"
+                                        >Transfer</button>
+                                    </span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="dtmf">
+                        <div class='text-center'>
+                            <form class="form-inline dtmf-form">
+                                <div class="input-group select_folder_name mt8">
+                                    <input
+                                        type="text"
+                                        class="form-control input-sm"
+                                        name="dtmf"
+                                        placeholder="1 ..."
+                                    />
+                                    <span class="input-group-btn">
+                                        <button
+                                            class="btn btn-primary btn-sm"
+                                            style='font-size: 12px;'
+                                            type="submit"
+                                        >Send</button>
+                                    </span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="customer">
+                        <div class='col-md-12' style="height: 150px;overflow: auto;">
+                            <table class="table" id="phone_table_list">
+                                <tr>
+                                    <th>
+                                        Name
+                                    </th>
+                                    <th>
+                                        Phone
+                                    </th>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <div class="row mt4 mb4">
+                    <div class='col-md-12'>
+                        <select class='form-control' name='phonecall_about'>
+                            <option value=''>Phonecall About</option>
+                            <t t-foreach='phonecall_about' t-as='rec'>
+                                <option t-att-value='rec["id"]'>
+                                    <t t-esc='rec["name"]' />
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+                </div>
+                <pre class="info" />
+                <textarea id='description' class='form-control' placeholder='Notes' />
+            </div>
+        </div>
+    </t>
+    <t t-name="ringcentral.incoming_call">
+        <div class="row">
+            <div class='col-md-12'>
+                <t t-if='from_name' t-esc='from_name' />
+                <t t-esc='from_number' />
+            </div>
+            <div class='col-md-12' style="height: 200px;overflow: auto;">
+                <form class="form-inline forward-form">
+                    <div class="input-group select_folder_name mt8">
+                        <input
+                            type="text"
+                            class="form-control input-sm"
+                            name="forward"
+                            placeholder="Forward To"
+                        />
+                        <span class="input-group-btn">
+                            <button
+                                class="btn btn-primary input-sm"
+                                style='font-size: 12px;'
+                                type="submit"
+                            >Forward</button>
+                        </span>
+                    </div>
+                </form>
+                <table class="table" id="phone_table_list">
+                    <tr>
+                        <th>
+                            Name
+                        </th>
+                        <th>
+                            Phone
+                        </th>
+                    </tr>
+                </table>
+            </div>
+            <div class='col-md-12 mt4'>
+                <button class="btn btn-success answer">Answer</button>
+                <button class="btn btn-danger decline">Decline</button>
+            </div>
+        </div>
+    </t>
+    <t t-name="ringcentral.contacts">
+        <div
+            class='mt8'
+            id='show_contacts'
+            style="overflow-y: auto;max-height: 550px;overflow-x: hidden;"
+        >
+            <table class='table table-hover'>
+                <tr t-foreach='partners' t-as='partner'>
+                    <td>
+                        <t t-if="partner['image_128']">
+                            <img
+                                class="img img-responsive"
+                                width='20'
+                                height='20'
+                                t-att-src="'data:image/jpg;base64,' + partner['image_128']"
+                            />
+                        </t>
+                        <t t-if="!partner['image_128']">
+                            <img
+                                class='img img-responsive'
+                                width='20'
+                                height='20'
+                                src="/base/static/img/avatar_grey.png"
+                            />
+                        </t>
+                    </td>
+                    <td
+                        style='cursor: pointer;'
+                        class='partner_details'
+                        t-att-data-partner_image='partner["image_128"]'
+                        t-att-data-partner_email='partner["email"]'
+                        t-att-data-partner_name='partner["name"]'
+                        t-att-data-partner_phone='partner["phone"]'
+                    >
+                        <div class='row'>
+                            <div class='col-md-12'>
+                                <t t-esc='partner["name"]' />
+                            </div>
+                        </div>
+                        <div class='row'>
+                            <div class='col-md-12'>
+                                <t t-if='partner["phone"]'>
+                                    <t t-esc='partner["phone"]' />
+                                </t>
+                            </div>
+                            <t t-if='partner["mobile"]'>
+                                <div class='col-md-12'>
+                                    <t t-esc='partner["mobile"]' />
+                                </div>
+                            </t>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </t>
+    <t t-name="ringcentral.partner_call_details">
+        <div class='row mt8 mb8'>
+            <div class='col-md-12'>
+                <div class='pull-left'>
+                    <a class='show_partners'>
+                        <i class="fa fa-arrow-left" aria-hidden="true" />
+                    </a>
+                </div>
+                <div class='text-center'>
+                    <b>Contact Details</b>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <div class='row mt8 mb8'>
+            <div class='col-md-3 col-sm-3 col-xs-3'>
+                <t t-if="image_128">
+                    <img
+                        class="img img-responsive"
+                        width='20'
+                        height='20'
+                        t-att-src="'data:image/jpg;base64,' + image_128"
+                    />
+                </t>
+                <t t-if="!image_128">
+                    <img
+                        class='img img-responsive'
+                        width='20'
+                        height='20'
+                        src="/base/static/src/img/avatar.png"
+                    />
+                </t>
+            </div>
+            <div class='col-md-9 col-sm-9 col-xs-9'>
+                <t t-esc='name' />
+            </div>
+        </div>
+        <hr />
+        <div class='row mt8 mb8'>
+            <div class='col-md-12'>
+                <div class='text-center'>
+                    <b>Activity</b>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <div class='row mt8 mb8'>
+            <div class='col-md-12'>
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active">
+                        <a
+                            href="#partner_emails"
+                            aria-controls="emails"
+                            role="tab"
+                            data-toggle="tab"
+                        >
+                            <i class="fa fa-envelope" aria-hidden="true" />
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a
+                            href="#partner_voice"
+                            aria-controls="voice"
+                            role="tab"
+                            data-toggle="tab"
+                        >
+                            <i class="fa fa-phone" aria-hidden="true" />
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a
+                            href="#partner_fax"
+                            aria-controls="fax"
+                            role="tab"
+                            data-toggle="tab"
+                        >
+                            <i class="fa fa-fax" aria-hidden="true" />
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a
+                            href="#partner_text"
+                            aria-controls="text"
+                            role="tab"
+                            data-toggle="tab"
+                        >
+                            <i class="fa fa-comment" aria-hidden="true" />
+                        </a>
+                    </li>
+                </ul>
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="partner_emails">
+                        <div class='text-center'>No Recent E-Mails</div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="partner_voice">
+                        <div class='text-center'>No Voice Messages</div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="partner_fax">
+                        <div class='text-center'>No Fax Messages</div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="partner_text">
+                        <div class='text-center'>No Recent Calls</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <t t-if='email'>
+            <div class='row'>
+                <div class='col-md-12'>
+                    <b>Email Address</b>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col-md-3 col-sm-3 col-xs-3'>
+                    E-Mail
+                </div>
+                <div class='col-md-9 col-sm-9 col-xs-9'>
+                    <t t-esc='email' />
+                </div>
+            </div>
+            <hr />
+        </t>
+        <div class='row'>
+            <div class='col-md-12'>
+                <b>Phone Number</b>
+            </div>
+        </div>
+        <div class='row'>
+            <div class='col-md-3 col-sm-3 col-xs-3'>
+                Mobile
+            </div>
+            <div class='col-md-6 col-sm-6 col-xs-6'>
+                <t t-esc='phone' />
+            </div>
+            <div class='col-md-3 col-sm-3 col-xs-3'>
+                <a
+                    t-att-data-phone_number='phone'
+                    class='dial_call_contact_detail'
+                    href='#'
+                >
+                    <i class="fa fa-phone" />
+                </a>
+                <!-- <a href='#' class='send_message_contact_detail'><i class="fa fa-comment" aria-hidden="true"></i></a> -->
+            </div>
+        </div>
+    </t>
+    <t t-name="ringcentral.all_calllog">
+        <t t-if='record_length'>
+            <ul class="list-group">
+                <t t-foreach='all_calls' t-as='call'>
+                    <t t-if='call["direction"] == "Outbound"'>
+                        <t t-if='call["to"]'>
+                            <li class="list-group-item">
+                                <div class='row'>
+                                    <t t-if='call["result"] == "Missed"'>
+                                        <div class='col-sm-3'>
+                                            <img
+                                                height="24"
+                                                width="24"
+                                                src='/ringcentral/static/src/img/missed_call.png'
+                                            />
+                                        </div>
+                                        <div class='col-sm-9'>
+                                            <div style='color:#C80413;'>
+                                                <!-- <t t-if='call["partner_name"]'>
+		                                            <t t-esc='call["partner_name"]'/>
+		                                        </t>
+		                                        <t t-if='!call["partner_name"]'> -->
+                                                <!-- <t t-if='call["to"]["name"]' t-esc='call["to"]["name"]'/> -->
+                                                <!-- </t> -->
+                                                <!-- -->
+                                                <t
+                                                    t-if="widget.get_partner_name(call['to']['phoneNumber'])"
+                                                    t-esc="widget.get_partner_name(call['to']['phoneNumber'])"
+                                                />
+                                                <div
+                                                    style='cursor: pointer !important;'
+                                                    class='dial_call_contact_detail'
+                                                    t-att-data-phone_number='call["to"]["phoneNumber"]'
+                                                >
+                                                    <t
+                                                        t-esc='call["to"]["phoneNumber"]'
+                                                    />
+                                                </div>
+                                                <t t-if='call["to"]["location"]'>
+                                                    <div style='font-size: 10px;'>
+                                                        <t
+                                                            t-esc='call["to"]["location"]'
+                                                        />
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </t>
+                                    <t t-if='call["result"] != "Missed"'>
+                                        <div class='col-sm-3'>
+                                            <img
+                                                height="24"
+                                                width="24"
+                                                src='/ringcentral/static/src/img/outgoing-call.png'
+                                            />
+                                        </div>
+                                        <div class='col-sm-9'>
+                                            <div style='color:#006DF0;'>
+                                                <!-- <t t-if='call["partner_name"]'>
+	                                                <t t-esc='call["partner_name"]'/>
+	                                            </t>
+	                                            <t t-if='!call["partner_name"]'> -->
+                                                <!-- <t t-if='call["to"]["name"]' t-esc='call["to"]["name"]'/> -->
+                                                <!-- </t> -->
+                                                <t
+                                                    t-if="widget.get_partner_name(call['to']['phoneNumber'])"
+                                                    t-esc="widget.get_partner_name(call['to']['phoneNumber'])"
+                                                />
+                                                <div
+                                                    style='cursor: pointer !important;'
+                                                    class='dial_call_contact_detail'
+                                                    t-att-data-phone_number='call["to"]["phoneNumber"]'
+                                                >
+                                                    <t
+                                                        t-esc='call["to"]["phoneNumber"]'
+                                                    />
+                                                </div>
+                                                <t t-if='call["to"]["location"]'>
+                                                    <div style='font-size: 10px;'>
+                                                        <t
+                                                            t-esc='call["to"]["location"]'
+                                                        />
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                            </li>
+                        </t>
+                    </t>
+                    <t t-if='call["direction"] == "Inbound"'>
+                        <t t-if='call["from"]'>
+                            <li class="list-group-item">
+                                <div class='row'>
+                                    <t t-if='call["result"] == "Missed"'>
+                                        <div class='col-sm-3'>
+                                            <img
+                                                height="24"
+                                                width="24"
+                                                src='/ringcentral/static/src/img/missed_call.png'
+                                            />
+                                        </div>
+                                        <div class='col-sm-9'>
+                                            <div style='color:#C80413;'>
+                                                <!-- <t t-if='call["from"]["name"]' t-esc='call["from"]["name"]'/> -->
+                                                <t
+                                                    t-if="widget.get_partner_name(call['from']['phoneNumber'])"
+                                                    t-esc="widget.get_partner_name(call['from']['phoneNumber'])"
+                                                />
+                                                <div
+                                                    style='cursor: pointer !important;'
+                                                    class='dial_call_contact_detail'
+                                                    t-att-data-phone_number='call["from"]["phoneNumber"]'
+                                                >
+                                                    <t
+                                                        t-if='call["from"]["phoneNumber"]'
+                                                        t-esc='call["from"]["phoneNumber"]'
+                                                    />
+                                                </div>
+                                                <t t-if='call["from"]["location"]'>
+                                                    <div style='font-size: 10px;'>
+                                                        <t
+                                                            t-esc='call["from"]["location"]'
+                                                        />
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </t>
+                                    <t t-if='call["result"] != "Missed"'>
+                                        <div class='col-sm-3'>
+                                            <img
+                                                height="24"
+                                                width="24"
+                                                src='/ringcentral/static/src/img/incoming-call.png'
+                                            />
+                                        </div>
+                                        <div class='col-sm-9'>
+                                            <div style='color:#91DC5A;'>
+                                                <t
+                                                    t-if="widget.get_partner_name(call['from']['phoneNumber'])"
+                                                    t-esc="widget.get_partner_name(call['from']['phoneNumber'])"
+                                                />
+                                                <t
+                                                    t-if='call["from"]["name"]'
+                                                    t-esc='call["from"]["name"]'
+                                                />
+                                                <div
+                                                    style='cursor: pointer !important;'
+                                                    class='dial_call_contact_detail'
+                                                    t-att-data-phone_number='call["from"]["phoneNumber"]'
+                                                >
+                                                    <t
+                                                        t-if='call["from"]["phoneNumber"]'
+                                                        t-esc='call["from"]["phoneNumber"]'
+                                                    />
+                                                </div>
+                                                <t t-if='call["from"]["location"]'>
+                                                    <div style='font-size: 10px;'>
+                                                        <t
+                                                            t-esc='call["from"]["location"]'
+                                                        />
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                            </li>
+                        </t>
+                    </t>
+                </t>
+            </ul>
+        </t>
+        <t t-if='!record_length'>
+            No Records Found
+        </t>
+    </t>
+    <t t-name="ringcentral.miss_calllog">
+        <t t-if='record_length'>
+            <ul class="list-group">
+                <t t-foreach='all_calls' t-as='call'>
+                    <t t-if='call["direction"] == "Outbound"'>
+                        <t t-if='call["to"]'>
+                            <li
+                                class="list-group-item"
+                                style='color:#C80413;'
+                                t-if='call["result"] == "Missed"'
+                            >
+                                <div class='row'>
+                                    <div class='col-sm-3'>
+                                        <img
+                                            height="24"
+                                            width="24"
+                                            src='/ringcentral/static/src/img/missed_call.png'
+                                        />
+                                    </div>
+                                    <div class='col-sm-9'>
+                                        <!-- <t t-if='call["to"]["name"]' t-esc='call["to"]["name"]'/> -->
+                                        <t
+                                            t-if="widget.get_partner_name(call['to']['phoneNumber'])"
+                                            t-esc="widget.get_partner_name(call['to']['phoneNumber'])"
+                                        />
+                                        <div
+                                            style='cursor: pointer !important;'
+                                            class='dial_call_contact_detail'
+                                            t-att-data-phone_number='call["to"]["phoneNumber"]'
+                                        >
+                                            <t t-esc='call["to"]["phoneNumber"]' />
+                                        </div>
+                                        <t t-if='call["to"]["location"]'>
+                                            <div style='font-size: 10px;'>
+                                                <t t-esc='call["to"]["location"]' />
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </li>
+                        </t>
+                    </t>
+                    <t t-if='call["direction"] == "Inbound"'>
+                        <t t-if='call["from"]'>
+                            <li
+                                class="list-group-item"
+                                style='color:#C80413;'
+                                t-if='call["result"] == "Missed"'
+                            >
+                                <div class='row'>
+                                    <div class='col-sm-3'>
+                                        <img
+                                            height="24"
+                                            width="24"
+                                            src='/ringcentral/static/src/img/missed_call.png'
+                                        />
+                                    </div>
+                                    <div class='col-sm-9'>
+                                        <!-- <t t-if='call["from"]["name"]' t-esc='call["from"]["name"]'/> -->
+                                        <t
+                                            t-if="widget.get_partner_name(call['from']['phoneNumber'])"
+                                            t-esc="widget.get_partner_name(call['from']['phoneNumber'])"
+                                        />
+                                        <div
+                                            style='cursor: pointer !important;'
+                                            class='dial_call_contact_detail'
+                                            t-att-data-phone_number='call["from"]["phoneNumber"]'
+                                        >
+                                            <t
+                                                t-if='call["from"]["phoneNumber"]'
+                                                t-esc='call["from"]["phoneNumber"]'
+                                            />
+                                        </div>
+                                        <t t-if='call["from"]["location"]'>
+                                            <div style='font-size: 10px;'>
+                                                <t t-esc='call["from"]["location"]' />
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </li>
+                        </t>
+                    </t>
+                </t>
+            </ul>
+        </t>
+        <t t-if='!record_length'>
+            No Records Found
+        </t>
+    </t>
+    <t t-name="ringcentral.messages_partner">
+        <ul class="list-group list_overflow">
+            <t t-foreach='all_messages' t-as='message_phone_number'>
+                <li class="list-group-item" style="width: 155%;">
+                    <div class='row'>
+                        <div class='col-md-2'>
+                            <span>
+                                <i class="fa fa-comments" />
+                            </span>
+                        </div>
+                        <div class="col-md-10">
+                            <span>
+                                <t t-esc="message_phone_number['phoneNumber']" />
+                            </span>
+                        </div>
+                    </div>
+                </li>
+            </t>
+        </ul>
+    </t>
+    <t t-name="ringcentral.messages">
+        <ul class="list-group list_overflow">
+            <t t-foreach='all_messages' t-as='message'>
+                <t t-if='message["direction"] == "Outbound"'>
+                    <t t-set="title" t-value='message["to"][0]["phoneNumber"]' />
+                </t>
+                <t t-if='message["direction"] == "Inbound"'>
+                    <t t-set="title" t-value='message["from"]["phoneNumber"]' />
+                </t>
+                <li
+                    class="list-group-item"
+                    data-toggle="popover"
+                    data-placement="left"
+                    data-trigger="hover"
+                    t-att-title="title + ' (' + datetime_conversion(message['creationTime']) + ')'"
+                    t-att-data-content='message["subject"]'
+                >
+                    <div class='row'>
+                        <div class='col-md-3' style="display: inline-flex;">
+                            <t t-if='message["direction"] == "Outbound"'>
+                                <img
+                                    height="35"
+                                    width="40"
+                                    src='/ringcentral/static/src/img/outgoing_msg.jpg'
+                                />
+                                <t t-if='message["attachments"].length > 2'>
+                                    <span
+                                        style="display: flex; margin-top:12px;"
+                                        class="attchmentment_link"
+                                        t-att-data-id='message["id"]'
+                                    >
+                                        <i class="fa fa-paperclip" />
+                                        <t t-esc="message['attachments'].length - 1" />
+                                    </span>
+                                </t>
+                            </t>
+                            <t t-if='message["direction"] == "Inbound"'>
+                                <img
+                                    height="35"
+                                    width="40"
+                                    src='/ringcentral/static/src/img/incoming_msg.jpg'
+                                />
+                                <t t-if='message["attachments"].length > 1'>
+                                    <span
+                                        style="display: flex; margin-top:12px;"
+                                        class="attchmentment_link"
+                                        t-att-data-id='message["id"]'
+                                    >
+                                        <i class="fa fa-paperclip" />
+                                        <t t-esc="message['attachments'].length - 1" />
+                                    </span>
+                                </t>
+                            </t>
+                        </div>
+                        <div class='col-md-9'>
+                            <div class='row'>
+                                <div class='col-md-12'>
+                                    <t t-if='message["direction"] == "Outbound"'>
+                                        <t t-esc='message["to"][0]["partner_name"]' />
+                                        <t t-if='message["to"][0]["partner_name"]'>
+                                            <t
+                                                t-esc='message["to"][0]["partner_name"]'
+                                            />
+                                        </t>
+                                        <t t-if='!message["to"][0]["partner_name"]'>
+                                            <t
+                                                t-esc='message["to"][0]["phoneNumber"]'
+                                            />
+                                        </t>
+                                    </t>
+                                    <t t-if='message["direction"] == "Inbound"'>
+                                        <t t-esc='message["to"][0]["partner_name"]' />
+                                        <t t-if='message["from"]["partner_name"]'>
+                                            <t
+                                                t-esc='message["from"]["partner_name"]'
+                                            />
+                                        </t>
+                                        <t t-if='!message["from"]["partner_name"]'>
+                                            <t
+                                                t-if='message["from"]["phoneNumber"]'
+                                                t-esc='message["from"]["phoneNumber"]'
+                                            />
+                                        </t>
+                                    </t>
+                                    <!-- <button string="Reply" class="btn btn-success" >Replay</button> -->
+                                </div>
+                                <div class='col-md-12'>
+                                    <div class='ringcentral_msg_truncate'>
+                                        <t t-esc='message["subject"]' />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </t>
+        </ul>
+    </t>
+    <t t-name="ringcentral.PhonecallWidget">
+        <div style="position: absolute;" class="ringcentral_sidebar">
+            <video id="remoteVideo" hidden="hidden" />
+            <video id="localVideo" hidden="hidden" muted="muted" />
+            <div class="slide-menu" id="ringcentral_menu">
+                <ul class="menu-items">
+                    <li
+                        class="menu-item menu_sign_in_out_li"
+                        title="Sign In"
+                        data-index="0"
+                    >
+                        <div class="menu-icon">
+                            <i class="fa fa-sign-in" />
+                            <i class="fa fa-sign-out d-none" />
+                        </div>
+                    </li>
+                    <li
+                        class="menu-item menu_item_li"
+                        data-target="#dialer"
+                        title="Dialer"
+                        data-index="1"
+                    >
+                        <div class="menu-icon">
+                            <i class="fa fa-phone" />
+                        </div>
+                        <div class="menu-content">
+                            <span>Dialer</span>
+                        </div>
+                        <div class="menu-close">
+                            <i class="fa fa-times" />
+                        </div>
+                    </li>
+                    <li
+                        class="menu-item menu_item_li"
+                        data-target="#compose_message"
+                        title="Compose Message"
+                        data-index="2"
+                    >
+                        <div class="menu-icon">
+                            <i class="fa fa-comment" />
+                        </div>
+                        <div class="menu-content">
+                            <span>Compose Message</span>
+                        </div>
+                        <div class="menu-close">
+                            <i class="fa fa-times" />
+                        </div>
+                    </li>
+                    <li
+                        class="menu-item menu_item_li"
+                        data-target="#messages"
+                        title="Messages"
+                        data-index="3"
+                    >
+                        <div class="menu-icon">
+                            <i class="fa fa-envelope" />
+                        </div>
+                        <div class="menu-content">
+                            <span>Messages</span>
+                        </div>
+                        <div class="menu-close">
+                            <i class="fa fa-times" />
+                        </div>
+                    </li>
+                    <li
+                        class="menu-item menu_item_li"
+                        data-target="#contacts"
+                        title="Contacts"
+                        data-index="4"
+                    >
+                        <div class="menu-icon">
+                            <i class="fa fa-user" />
+                        </div>
+                        <div class="menu-content">
+                            <span>Contacts</span>
+                        </div>
+                        <div class="menu-close">
+                            <i class="fa fa-times" />
+                        </div>
+                    </li>
+                    <li
+                        class="menu-item menu_item_li"
+                        data-target="#call_log"
+                        title="Call Log"
+                        data-index="5"
+                    >
+                        <div class="menu-icon">
+                            <i class="fa fa-history" />
+                        </div>
+                        <div class="menu-content">
+                            <span>Call Log</span>
+                        </div>
+                        <div class="menu-close">
+                            <i class="fa fa-times" />
+                        </div>
+                    </li>
+                </ul>
+                <div class="menu-panels">
+                    <div id="dialer" class="menu-panel">
+                        <div class="panel-body">
+                            <div class="row mb8">
+
+                            </div>
+                            <div class="row mb8">
+                                <div class="col-md-12">
+                                    <div class="ui-widget">
+                                        <select class='form-control combobox'>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class='row text-center'>
+                                <div class='col-md-4 col-sm-4 col-xs-4'>
+                                    <button
+                                        type="button"
+                                        class="btn btn-default btn-circle btn-sm dialpad"
+                                        data-number='1'
+                                    >
+                                        1<br />
+                                    </button>
+                                </div>
+                                <div class='col-md-4 col-sm-4 col-xs-4'>
+                                    <button
+                                        type="button"
+                                        class="btn btn-default btn-circle btn-sm dialpad"
+                                        data-number='2'
+                                    >
+                                        2<br />
+                                    </button>
+                                </div>
+                                <div class='col-md-4 col-sm-4 col-xs-4'>
+                                    <button
+                                        type="button"
+                                        class="btn btn-default btn-circle btn-sm dialpad"
+                                        data-number='3'
+                                    >
+                                        3<br />
+                                    </button>
+                                </div>
+                            </div>
+                            <div class='row text-center'>
+                                <div class='col-md-4 col-sm-4 col-xs-4'>
+                                    <button
+                                        type="button"
+                                        class="btn btn-default btn-circle btn-sm dialpad"
+                                        data-number='4'
+                                    >
+                                        4<br />
+                                    </button>
+                                </div>
+                                <div class='col-md-4 col-sm-4 col-xs-4'>
+                                    <button
+                                        type="button"
+                                        class="btn btn-default btn-circle btn-sm dialpad"
+                                        data-number='5'
+                                    >
+                                        5<br />
+                                    </button>
+                                </div>
+                                <div class='col-md-4 col-sm-4 col-xs-4'>
+                                    <button
+                                        type="button"
+                                        class="btn btn-default btn-circle btn-sm dialpad"
+                                        data-number='6'
+                                    >
+                                        6<br />
+                                    </button>
+                                </div>
+                            </div>
+                            <div class='row text-center'>
+                                <div class='col-md-4 col-sm-4 col-xs-4'>
+                                    <button
+                                        type="button"
+                                        class="btn btn-default btn-circle btn-sm dialpad"
+                                        data-number='7'
+                                    >
+                                        7<br />
+                                    </button>
+                                </div>
+                                <div class='col-md-4 col-sm-4 col-xs-4'>
+                                    <button
+                                        type="button"
+                                        class="btn btn-default btn-circle btn-sm dialpad"
+                                        data-number='8'
+                                    >
+                                        8<br />
+                                    </button>
+                                </div>
+                                <div class='col-md-4 col-sm-4 col-xs-4'>
+                                    <button
+                                        type="button"
+                                        class="btn btn-default btn-circle btn-sm dialpad"
+                                        data-number='9'
+                                    >
+                                        9<br />
+                                    </button>
+                                </div>
+                            </div>
+                            <div class='row text-center'>
+                                <div class='col-md-offset-4 col-md-4'>
+                                    <button
+                                        type="button"
+                                        class="btn btn-default btn-circle btn-sm dialpad"
+                                        data-number='0'
+                                    >0</button>
+                                </div>
+                            </div>
+                            <div class='row'>
+                                <div
+                                    class='col-sm-offset-3 col-md-offset-4 col-xs-6 col-sm-4 col-md-4 mx-auto'
+                                >
+                                    <button
+                                        type="button"
+                                        class="btn btn-success btn-block btn-sm outbound_call"
+                                        title='Call'
+                                    >
+                                        <i class="fa fa-phone" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li role="presentation" class="active">
+                                <a
+                                    href="#dial_missed_calls"
+                                    aria-controls="Missed"
+                                    role="tab"
+                                    data-toggle="tab"
+                                >Missed</a>
+                            </li>
+                            <li role="presentation">
+                                <a
+                                    href="#dial_all_calls"
+                                    aria-controls="all"
+                                    role="tab"
+                                    data-toggle="tab"
+                                >All</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div
+                                role="tabpanel"
+                                class="tab-pane active"
+                                id="dial_missed_calls"
+                                style='overflow:auto;'
+                            >No Records Found</div>
+                            <div
+                                role="tabpanel"
+                                class="tab-pane"
+                                id="dial_all_calls"
+                                style='overflow:auto;'
+                            >No Records Found</div>
+                        </div>
+                    </div>
+                    <div id="compose_message" class="menu-panel">
+                        <div class="panel-body">
+                            <div id='compose_message_child_1'>
+                                <div class="row">;
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <select class='form-control combobox'>
+                                            </select>
+                                            <!-- <input type="text" class="form-control combobox" placeholder="Enter Name or Number" name='msg_to_number'/> -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <textarea
+                                                class="form-control"
+                                                placeholder="Type any text to send"
+                                                id='msg_text'
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <input
+                                                type="file"
+                                                class="form-control"
+                                                placeholder="Type any text to send"
+                                                id='msg_image'
+                                                multiple="True"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class='row mb4'>
+                                    <div
+                                        class='col-sm-offset-3 col-md-offset-3 col-xs-6 col-sm-6 col-md-6 mx-auto'
+                                    >
+                                        <button
+                                            type="button"
+                                            class="btn btn-success btn-block send_msg "
+                                            title='Message'
+                                        >
+                                            <i class="fa fa-envelope" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class='row mb4 sent_text_messages_in_compose'>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="messages" class="menu-panel">
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li role="presentation" class="active">
+                                <a
+                                    href="#all"
+                                    aria-controls="all"
+                                    role="tab"
+                                    data-toggle="tab"
+                                >
+                                    <i class="fa fa-envelope" />
+                                </a>
+                            </li>
+                            <li role="presentation">
+                                <a
+                                    href="#sent_text_messages"
+                                    aria-controls="text"
+                                    role="tab"
+                                    data-toggle="tab"
+                                >
+                                    <i class="fa fa-comment" />
+                                </a>
+                            </li>
+                        </ul>
+                        <!-- Tab panes -->
+                        <div class="tab-content">
+                            <div role="tabpanel" class="tab-pane active" id="all">
+                                <div class='text-center'>No Records Found</div>
+                            </div>
+                            <div role="tabpanel" class="tab-pane" id="voice">
+                                <div class='text-center'>No Voice Messages</div>
+                            </div>
+                            <div role="tabpanel" class="tab-pane" id="fax">
+                                <div class='text-center'>No Fax Messages</div>
+                            </div>
+                            <div
+                                role="tabpanel"
+                                class="tab-pane"
+                                id="sent_text_messages"
+                            >
+                                <div class='text-center'>No Recent Messages</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="contacts" class="menu-panel">
+                        <h4>Loading Contacts</h4>
+                    </div>
+                    <div id="call_log" class="menu-panel">
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li role="presentation" class="active">
+                                <a
+                                    href="#missed_calls"
+                                    aria-controls="Missed"
+                                    role="tab"
+                                    data-toggle="tab"
+                                >Missed</a>
+                            </li>
+                            <li role="presentation">
+                                <a
+                                    href="#all_calls"
+                                    aria-controls="all"
+                                    role="tab"
+                                    data-toggle="tab"
+                                >All</a>
+                            </li>
+                        </ul>
+                        <!-- Tab panes -->
+                        <div class="tab-content">
+                            <div
+                                role="tabpanel"
+                                class="tab-pane active"
+                                id="missed_calls"
+                                style='overflow:auto;'
+                            >No Records Found</div>
+                            <div
+                                role="tabpanel"
+                                class="tab-pane"
+                                id="all_calls"
+                                style='overflow:auto;'
+                            >No Records Found</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

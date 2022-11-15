@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="view_res_users_form_inherit">
+        <field name="name">view.res.users.form.inherit</field>
+        <field name="inherit_id" ref="base.view_users_form" />
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook/page[1]" position="after">
+                <page
+                    name="Ringcentral User Configuration"
+                    string="Ringcentral User Configuration"
+                >
+                    <group>
+                        <button
+                            class='sync_ringcentral btn btn-primary'
+                            string='Sync RingCentral'
+                        >
+                        </button>
+                    </group>
+                    <group>
+                        <field name='ringcentral_access_token' />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

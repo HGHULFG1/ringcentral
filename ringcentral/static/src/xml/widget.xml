@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates>
+    <t t-name="audio_field">
+        <audio
+            controls="controls"
+            preload="metadata"
+            t-att-style="(options.width ? 'width:'+options.width+';' : '')+
+                            (options.height ? 'height:'+options.height+';' : '')+
+                            (options.add_styles || '') "
+        >
+            <source t-att-src="widget.value" type="audio/mpeg" />
+            <p>Your browser does not support HTML5.</p>
+        </audio>
+    </t>
+</templates>

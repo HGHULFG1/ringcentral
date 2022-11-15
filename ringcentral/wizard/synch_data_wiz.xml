@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <record model="ir.ui.view" id="synch_data_form">
+            <field name="name">synch_data.form</field>
+            <field name="model">ringcentral.synch</field>
+            <field name="arch" type="xml">
+                <form string="description">
+                    <header>
+        			</header>
+                    <sheet>
+                        <group>
+                            <field name="select_filter" widget="radio" />
+                        </group>
+                    </sheet>
+                    <footer>
+                        <button
+                            string="Import"
+                            name="create_filter"
+                            type="object"
+                            class="oe_highlight"
+                        />
+                        <button
+                            string="Cancel"
+                            class="btn btn-default"
+                            special="cancel"
+                        />
+                    </footer>
+                </form>
+            </field>
+        </record>
+        <record id="ir_cron_fetch_data" model="ir.cron">
+            <field name="name">Ring central synch data</field>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="user_id" ref="base.user_admin" />
+            <field name="doall" eval="False" />
+            <field name="model_id" ref="model_ringcentral_synch" />
+            <field name="code">model.create_filter()</field>
+            <field name="state">code</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record model="ir.ui.view" id="view_res_company_form_inherit">
+        <field name="name">view.res.company.form.inherit</field>
+        <field name="inherit_id" ref="base.view_company_form" />
+        <field name="model">res.company</field>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook/page[1]" position="after">
+                <page
+                    name="Ringcentral Configuration"
+                    string="Ringcentral Configuration"
+                >
+                    <group>
+                        <field name='ringcentral_server' />
+                        <field name='ringcentral_app_key' />
+                        <field name='ringcentral_app_secret' />
+                        <field name='ringcentral_redirect_uri' />
+                        <field name='ringcentral_service_uri' />
+                        <field name='ringcentral_app_host' />
+                        <field name='ringcentral_app_port' />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

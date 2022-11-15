@@ -1,0 +1,141 @@
+/* CSS Document */
+/*
+Slide Menu
+ CSS Structure as follows:
+    .slide-menu
+        .menu-items
+            .menu-item
+        .menu-panels
+            .menu-panel
+
+*/
+
+#oe_main_menu_navbar {
+    z-index: 5;
+}
+
+/*Slide Menu styles*/
+
+.slide-menu {
+    position: fixed;
+    width: 300px;
+    height: 100%;
+    z-index: 3;
+    left: 100%;
+    /*   padding-top: 30px; */
+    /*     padding-top: 115px; */
+    padding-top: 159px;
+    &.left-side {
+        left: 0%;
+        right: auto;
+        .menu-items .menu-item {
+            right: 0px;
+            left: auto;
+            .menu-icon {
+                float: right;
+            }
+            .menu-close {
+                top: 0px;
+                left: 0px;
+                right: auto;
+            }
+            .menu-content {
+                margin-left: 55px;
+            }
+        }
+        .menu-panels {
+            border-left: none;
+            border-right: 1px solid #cccccc;
+            left: -100%;
+        }
+    }
+    .menu-panels {
+        display: none;
+    }
+    &.open .menu-items {
+        padding-top: 45px;
+    }
+    .menu-items {
+        position: absolute;
+        left: 0px;
+        height: 100%;
+        width: 100%;
+        z-index: 1;
+        background-color: #c2c3c1;
+        padding: 0px;
+        margin: 0px;
+        .menu-item {
+            font-size: 26px;
+            border-top: 1px solid #aaaba9;
+            border-bottom: 1px solid #aaaba9;
+            display: block;
+            cursor: pointer;
+            position: absolute;
+            left: 0px;
+            width: 100%;
+            background-color: #dbdcd9;
+            .menu-close {
+                display: none;
+                position: absolute;
+                top: 0px;
+                right: 0px;
+                height: 100%;
+                text-align: center;
+                background-color: rgba(255, 255, 255, 0.25);
+                i {
+                    padding-top: 8px;
+                }
+            }
+            .menu-content {
+                padding: 7px 0px;
+                display: none;
+            }
+            .menu-icon {
+                padding: 7px 13px;
+                display: inline-block;
+                text-align: center;
+            }
+            &.active {
+                color: #ffffff;
+                background-color: #5b97d8;
+                top: 0px;
+                position: absolute;
+                text-decoration: none;
+                .menu-content,
+                .menu-close {
+                    display: inline-block;
+                }
+            }
+        }
+    }
+    .menu-panels {
+        left: 0px;
+        position: absolute;
+        height: 100%;
+        width: 250px;
+        background-color: #ffffff;
+        border-left: 1px solid #cccccc;
+        border-bottom: 1px solid #cccccc;
+        .menu-panel {
+            display: none;
+            padding: 5px;
+            &.active {
+                display: block;
+            }
+            h2 {
+                font-weight: lighter;
+                vertical-align: middle;
+                display: inline-block;
+            }
+            h3 {
+                font-size: 14px;
+                font-weight: bold;
+            }
+        }
+    }
+}
+
+/* .o_web_client > .o_main .o_main_content .o_control_panel,
+.o_web_client .navbar{
+    z-index: 4;
+} */
