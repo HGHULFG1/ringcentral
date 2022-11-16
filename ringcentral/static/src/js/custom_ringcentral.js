@@ -1,8 +1,8 @@
 odoo.define('ringcentral.ringcentralPanel', function(require) {
     "use strict";
-
     var Widget = require('web.Widget');
-    var WebClient = require('web.WebClient');
+//    var WebClient = require('web.web_client');
+
     var config = require('web.config');
     var session = require('web.session');
     var rpc = require('web.rpc');
@@ -10,9 +10,7 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
     var ajax = require('web.ajax');
     var Dialog = require('web.Dialog');
     var utils = require('web.utils');
-    // var FormData = require('form-data')
-
-
+    var AbstractView = require('web.AbstractView');
     //  for enterprise
     var dom = require('web.dom');
 
@@ -24,34 +22,37 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
     $(".custom-combobox-input").keyup(function() {
        $(this).val($(this).val().replace(/\s/g, ""));
     })
-    var PhoneCallFieldMixin = {
-        _renderPhoneCallButton: function(readonly = false, phone_obj){
-            var c_name = (readonly ? 'phone_readonly' : 'phone_edit');
-            return $('<button>', {
-                    type: 'button',
-                    'class': c_name + ' fa fa-phone btn',
-                })
-                .on('click', this._onPhoneCall.bind(phone_obj));
-            return $();
-        },
-
-        _onPhoneCall: function() {
-            if (session.ringcentralPanel && this.value) {
-                session.ringcentralPanel.makeCallForm(false, this.value);
-            }
-        },
-    };
+//    var PhoneCallFieldMixin = {
+//        _renderPhoneCallButton: function(readonly = false, phone_obj){
+//            var c_name = (readonly ? 'phone_readonly' : 'phone_edit');
+//            return $('<button>', {
+//                    type: 'button',
+//                    'class': c_name + ' fa fa-phone btn',
+//                })
+//                .on('click', this._onPhoneCall.bind(phone_obj));
+//            return $();
+//        },
+//
+//        _onPhoneCall: function() {
+//            if (session.ringcentralPanel && this.value) {
+//                session.ringcentralPanel.makeCallForm(false, this.value);
+//            }
+//        },
+//    };
 
     basic_fields.FieldPhone.include({
         _renderReadonly: function() {
-            this._super();
-            this.$el = this.$el.add(PhoneCallFieldMixin._renderPhoneCallButton(true, this));
+            if (this.value) {
+                this.el.innerHTML = this.value;
+                this.el.classList.add("btn-link");
+            }
         },
-        _renderEdit: function() {
-            var def = this._super.apply(this, arguments);
-            this.$el = this.$el.add(PhoneCallFieldMixin._renderPhoneCallButton(false, this));
-            return def;
-        },
+        _onClick: function(ev) {
+            ev.stopImmediatePropagation();
+            if (session.ringcentralPanel && this.value) {
+                session.ringcentralPanel.makeCallForm(false, this.value);
+            }
+        }
     });
     FormView.include({
         load_record: function(record) {
@@ -65,174 +66,203 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
         },
     });
 
-
-
-    WebClient.include({
-        start: function() {
+    AbstractView.include({
+//        /**
+//         * @override
+//         */
+        init: function (viewInfo, params) {
             var self = this;
-
-            // we add the o_touch_device css class to allow CSS to target touch
-            // devices.  This is only for styling purpose, if you need javascript
-            // specific behaviour for touch device, just use the config object
-            // exported by web.config
-            this.$el.toggleClass('o_touch_device', config.device.touch);
-            this.on("change:title_part", this, this._title_changed);
-            this._title_changed();
-            var state = $.bbq.getState();
-            // If not set on the url, retrieve cids from the local storage
-            // of from the default company on the user
-            var current_company_id = session.user_companies.current_company[0]
-            if (!state.cids) {
-                state.cids = utils.get_cookie('cids') !== null ? utils.get_cookie('cids') : String(current_company_id);
-            }
-            var stateCompanyIDS = _.map(state.cids.split(','), function(cid) {
-                return parseInt(cid)
-            });
-            var userCompanyIDS = _.map(session.user_companies.allowed_companies, function(company) {
-                return company[0]
-            });
-            // Check that the user has access to all the companies
-            if (!_.isEmpty(_.difference(stateCompanyIDS, userCompanyIDS))) {
-                state.cids = String(current_company_id);
-                stateCompanyIDS = [current_company_id]
-            }
-            // Update the user context with this configuration
-            session.user_context.allowed_company_ids = stateCompanyIDS;
-            $.bbq.pushState(state);
-            // Update favicon
-            $("link[type='image/x-icon']").attr('href', '/web/image/res.company/' + String(stateCompanyIDS[0]) + '/favicon/')
-            return session.is_bound
-                .then(function() {
-                    self.$el.toggleClass('o_rtl', _t.database.parameters.direction === "rtl");
-                    self.bind_events();
-                    return Promise.all([
-                        self.set_action_manager(),
-                        self.set_loading(),
-                        self.set_ringcentral_sidebar()
-                    ]);
-                }).then(function() {
-                    if (session.session_is_valid()) {
-                        return self.show_application();
-                    } else {
-                        // database manager needs the webclient to keep going even
-                        // though it has no valid session
-                        return Promise.resolve();
+            var ready = session.user_has_group('ringcentral.ringcentral_user')
+                .then(function (is_ringcentral_user) {
+                    if (is_ringcentral_user) {
+                        self.set_ringcentral_sidebar();
                     }
-                }).then(function() {
-                    // Listen to 'scroll' event and propagate it on main bus
-                    self.action_manager.$el.on('scroll', core.bus.trigger.bind(core.bus, 'scroll'));
-                    core.bus.trigger('web_client_ready');
-                    odoo.isReady = true;
-                    if (session.uid === 1) {
-                        self.$el.addClass('o_is_superuser');
-                    }
-                    self.$el.find('#ringcentral_menu').slidemenu();
                 });
-
-            core.bus.on('change_menu_section', this, function(menuID) {
-                this.do_push_state(_.extend($.bbq.getState(), {
-                    menu_id: menuID,
-                }));
-            });
-        },
-        
-
-        show_application: function () {
-        var self = this;
-        this.set_title();
-
-        return this.menu_dp.add(this.instanciate_menu_widgets()).then(function () {
-            $(window).bind('hashchange', self.on_hashchange);
-
-            // If the url's state is empty, we execute the user's home action if there is one (we
-            // show the first app if not)
-            var state = $.bbq.getState(true);
-            if (_.keys(state).length === 1 && _.keys(state)[0] === "cids") {
-                return self.menu_dp.add(self._rpc({
-                        model: 'res.users',
-                        method: 'read',
-                        args: [session.uid, ["action_id"]],
-                    }))
-                    .then(function (result) {
-                        var data = result[0];
-                        if (data.action_id) {
-                            return self.do_action(data.action_id[0]).then(function () {
-                                self.menu.change_menu_section(self.menu.action_id_to_primary_menu_id(data.action_id[0]));
-                            });
-                        } 
-                    });
-            } else {
-                return self.on_hashchange();
-            }
-        });
-    },
-        openFirstApp: function () {
-            this._appsMenu.openFirstApp();
-        },
-        set_ringcentral_sidebar: function() {
-            var self = this;
-            session.user_has_group('ringcentral.ringcentral_user').then(function(is_ringcentral_user) {
-                if (is_ringcentral_user) {
-                    var base_view = $('.o_web_client')
-                    self.ringcentralPanel = new ringcentralPanel(self);
-                    self.ringcentralPanel.appendTo(base_view);
-                    session.ringcentralPanel = self.ringcentralPanel
+            return Promise.all([this._super.apply(this, arguments), ready]).then(function () {
+                if(self.ringcentralPanel){
+                    self.ringcentralPanel.$el.find('#ringcentral_menu').slidemenu()
+                    self.ringcentralPanel.$el.find("#ring_central_panel_container").on('click',function(){
+                        console.log("clicked... on image",this)
+                        self.ringcentralPanel.$el.find('#ringcentral_menu').slideToggle("slow","linear");
+                    })
                 }
             });
         },
-
-        // Needs this method to have sidebar menu for Enterprise app switcher compatibility
-        toggle_app_switcher: function(display) {
-            if (display === this.app_switcher_displayed) {
-                return; // nothing to do (prevents erasing previously detached webclient content)
-            }
-            if (display) {
-                var self = this;
-                this.clear_uncommitted_changes().then(function() {
-                    // Save the current scroll position of the action_manager
-                    self.action_manager.setScrollTop(self.getScrollTop());
-
-                    // Detach the web_client contents
-                    var $to_detach = self.$el.contents()
-                        .not(self.menu.$el)
-                        .not('.o_loading')
-                        .not('.o_in_appswitcher')
-                        .not('.o_notification_manager')
-                        .not('.ringcentral_sidebar')
-                        .not('.o_chat_window');
-                    self.web_client_content = document.createDocumentFragment();
-                    dom.detach([{
-                        widget: self.action_manager
-                    }], {
-                        $to_detach: $to_detach
-                    }).appendTo(self.web_client_content);
-
-                    // Attach the app_switcher
-                    self.append_app_switcher();
-                    self.$el.addClass('o_app_switcher_background');
-
-                    // Save and clear the url
-                    self.url = $.bbq.getState();
-                    self._ignore_hashchange = true;
-                    $.bbq.pushState('#home', 2); // merge_mode 2 to replace the current state
-                    self.menu.toggle_mode(true, self.action_manager.get_inner_action() !== null);
-                });
-            } else {
-                dom.detach([{
-                    widget: this.app_switcher
-                }]);
-                dom.append(this.$el, [this.web_client_content], {
-                    in_DOM: true,
-                    callbacks: [{
-                        widget: this.action_manager
-                    }],
-                });
-                this.app_switcher_displayed = false;
-                this.$el.removeClass('o_app_switcher_background');
-                this.menu.toggle_mode(false, this.action_manager.get_inner_action() !== null);
-            }
-        }
+        set_ringcentral_sidebar: function() {
+            var self = this;
+            var base_view = $('.o_web_client')
+            self.ringcentralPanel = new ringcentralPanel(self);
+            self.ringcentralPanel.appendTo(base_view);
+            session.ringcentralPanel = self.ringcentralPanel
+        },
     });
+
+//    WebClient.include({
+//        start: function() {
+//            var self = this;
+//
+//            // we add the o_touch_device css class to allow CSS to target touch
+//            // devices.  This is only for styling purpose, if you need javascript
+//            // specific behaviour for touch device, just use the config object
+//            // exported by web.config
+//            this.$el.toggleClass('o_touch_device', config.device.touch);
+//            this.on("change:title_part", this, this._title_changed);
+//            this._title_changed();
+//            var state = $.bbq.getState();
+//            // If not set on the url, retrieve cids from the local storage
+//            // of from the default company on the user
+//            var current_company_id = session.user_companies.current_company[0]
+//            if (!state.cids) {
+//                state.cids = utils.get_cookie('cids') !== null ? utils.get_cookie('cids') : String(current_company_id);
+//            }
+//            var stateCompanyIDS = _.map(state.cids.split(','), function(cid) {
+//                return parseInt(cid)
+//            });
+//            var userCompanyIDS = _.map(session.user_companies.allowed_companies, function(company) {
+//                return company[0]
+//            });
+//            // Check that the user has access to all the companies
+//            if (!_.isEmpty(_.difference(stateCompanyIDS, userCompanyIDS))) {
+//                state.cids = String(current_company_id);
+//                stateCompanyIDS = [current_company_id]
+//            }
+//            // Update the user context with this configuration
+//            session.user_context.allowed_company_ids = stateCompanyIDS;
+//            $.bbq.pushState(state);
+//            // Update favicon
+//            $("link[type='image/x-icon']").attr('href', '/web/image/res.company/' + String(stateCompanyIDS[0]) + '/favicon/')
+//            return session.is_bound
+//                .then(function() {
+//                    self.$el.toggleClass('o_rtl', _t.database.parameters.direction === "rtl");
+//                    self.bind_events();
+//                    return Promise.all([
+//                        self.set_action_manager(),
+//                        self.set_loading(),
+//                        self.set_ringcentral_sidebar()
+//                    ]);
+//                }).then(function() {
+//                    if (session.session_is_valid()) {
+//                        return self.show_application();
+//                    } else {
+//                        // database manager needs the webclient to keep going even
+//                        // though it has no valid session
+//                        return Promise.resolve();
+//                    }
+//                }).then(function() {
+//                    // Listen to 'scroll' event and propagate it on main bus
+//                    self.action_manager.$el.on('scroll', core.bus.trigger.bind(core.bus, 'scroll'));
+//                    core.bus.trigger('web_client_ready');
+//                    odoo.isReady = true;
+//                    if (session.uid === 1) {
+//                        self.$el.addClass('o_is_superuser');
+//                    }
+//                    self.$el.find('#ringcentral_menu').slidemenu();
+//                });
+//
+//            core.bus.on('change_menu_section', this, function(menuID) {
+//                this.do_push_state(_.extend($.bbq.getState(), {
+//                    menu_id: menuID,
+//                }));
+//            });
+//        },
+//
+//
+//        show_application: function () {
+//        var self = this;
+//        this.set_title();
+//
+//        return this.menu_dp.add(this.instanciate_menu_widgets()).then(function () {
+//            $(window).bind('hashchange', self.on_hashchange);
+//
+//            // If the url's state is empty, we execute the user's home action if there is one (we
+//            // show the first app if not)
+//            var state = $.bbq.getState(true);
+//            if (_.keys(state).length === 1 && _.keys(state)[0] === "cids") {
+//                return self.menu_dp.add(self._rpc({
+//                        model: 'res.users',
+//                        method: 'read',
+//                        args: [session.uid, ["action_id"]],
+//                    }))
+//                    .then(function (result) {
+//                        var data = result[0];
+//                        if (data.action_id) {
+//                            return self.do_action(data.action_id[0]).then(function () {
+//                                self.menu.change_menu_section(self.menu.action_id_to_primary_menu_id(data.action_id[0]));
+//                            });
+//                        }
+//                    });
+//            } else {
+//                return self.on_hashchange();
+//            }
+//        });
+//    },
+//        openFirstApp: function () {
+//            this._appsMenu.openFirstApp();
+//        },
+//        set_ringcentral_sidebar: function() {
+//            var self = this;
+//            session.user_has_group('ringcentral.ringcentral_user').then(function(is_ringcentral_user) {
+//                if (is_ringcentral_user) {
+//                    var base_view = $('.o_web_client')
+//                    self.ringcentralPanel = new ringcentralPanel(self);
+//                    self.ringcentralPanel.appendTo(base_view);
+//                    session.ringcentralPanel = self.ringcentralPanel
+//                }
+//            });
+//        },
+//
+//        // Needs this method to have sidebar menu for Enterprise app switcher compatibility
+//        toggle_app_switcher: function(display) {
+//            if (display === this.app_switcher_displayed) {
+//                return; // nothing to do (prevents erasing previously detached webclient content)
+//            }
+//            if (display) {
+//                var self = this;
+//                this.clear_uncommitted_changes().then(function() {
+//                    // Save the current scroll position of the action_manager
+//                    self.action_manager.setScrollTop(self.getScrollTop());
+//
+//                    // Detach the web_client contents
+//                    var $to_detach = self.$el.contents()
+//                        .not(self.menu.$el)
+//                        .not('.o_loading')
+//                        .not('.o_in_appswitcher')
+//                        .not('.o_notification_manager')
+//                        .not('.ringcentral_sidebar')
+//                        .not('.o_chat_window');
+//                    self.web_client_content = document.createDocumentFragment();
+//                    dom.detach([{
+//                        widget: self.action_manager
+//                    }], {
+//                        $to_detach: $to_detach
+//                    }).appendTo(self.web_client_content);
+//
+//                    // Attach the app_switcher
+//                    self.append_app_switcher();
+//                    self.$el.addClass('o_app_switcher_background');
+//
+//                    // Save and clear the url
+//                    self.url = $.bbq.getState();
+//                    self._ignore_hashchange = true;
+//                    $.bbq.pushState('#home', 2); // merge_mode 2 to replace the current state
+//                    self.menu.toggle_mode(true, self.action_manager.get_inner_action() !== null);
+//                });
+//            } else {
+//                dom.detach([{
+//                    widget: this.app_switcher
+//                }]);
+//                dom.append(this.$el, [this.web_client_content], {
+//                    in_DOM: true,
+//                    callbacks: [{
+//                        widget: this.action_manager
+//                    }],
+//                });
+//                this.app_switcher_displayed = false;
+//                this.$el.removeClass('o_app_switcher_background');
+//                this.menu.toggle_mode(false, this.action_manager.get_inner_action() !== null);
+//            }
+//        }
+//    });
 
     var ringcentralPanel = Widget.extend({
         'template': 'ringcentral.PhonecallWidget',
@@ -242,6 +272,7 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
             this.message_flag = false;
             this.a = 0;
             this.contacts = [];
+            this.available_contacts = [];
             this.sdk = null;
             this.platform = null;
             this.webPhone = null;
@@ -271,6 +302,8 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
         },
         events: {
             'click li[data-target="#contacts"],.show_partners': 'render_contacts',
+            'click li[data-target="#available_extensions"], #show_contacts .fa-refresh, #available_extensions .fa-refresh': 'render_available_extensions',
+            'click li[data-target="#active_calls"], #show_active_calls .fa-refresh, #active_calls .fa-refresh': 'render_active_calls',
             'keyup #contact_search': 'contact_search',
             'click .dialpad': 'dialpad',
             'click .partner_details': 'show_partner_details',
@@ -281,6 +314,8 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
             'click .send_msg': 'send_msg',
             'click .dial_call_contact_detail': 'dial_call_contact_detail',
             'click .send_message_contact_detail': 'send_message_contact_detail',
+            'click .active_call_details': 'listen_active_call',
+            'click .btn-create-contact': 'click_create_contact',
         },
 
         start: function() {
@@ -299,8 +334,8 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                     self.ringcentral_service_uri = data['ringcentral_service_uri'];
                     self.ringcentral_base_url = data['ringcentral_base_url'];
                     self.contacts_action = data['contacts_action'];
-                    
-                    
+
+
                     self.rcsdk = new RingCentral.SDK({
                         appKey: data['ringcentral_app_key'],
                         appSecret: data['ringcentral_app_secret'],
@@ -341,6 +376,7 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                         } else {
                             if (self.access_token && self.platform._isAccessTokenValid()) {
                                 self.login(data['ringcentral_server'], data['ringcentral_app_key'], data['ringcentral_app_secret'], data['ringcentral_redirect_uri'], data['ringcentral_app_host'], data['ringcentral_app_port']);
+                                self.do_recursive_alert();
                             } else {
                                 self.open_auth_window(data['ringcentral_server'], data['ringcentral_app_key'], data['ringcentral_app_secret'], data['ringcentral_redirect_uri'], data['ringcentral_app_host'], data['ringcentral_app_port'])
                             }
@@ -377,20 +413,22 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                             "id": partner[0],
                             "name" : partner[1],
                             'phone' : partner[2],
-                            "mobile" : partner[3]
+                            "mobile" : partner[3],
+                            "customer_rank" :  partner[4],
+                            "supplier_rank" :  partner[5]
                         }
                         partner_ids_li.push(partner)
                         if (partner.phone) {
                                 option = new Option(partner.name + ' <' + partner.phone + '>', partner.phone);
-                            } else {
-                                option = new Option(partner.name + ' <' + partner.mobile + '>', partner.mobile);
-                            }
-                            select.append($(option));
-                            self.contacts_partner[partner.id] = partner;
-                            self.partner_search_string += self._partner_search_string(partner);
-                        })
+                        } else {
+                            option = new Option(partner.name + ' <' + partner.mobile + '>', partner.mobile);
+                        }
+                        select.append($(option));
+                        self.contacts_partner[partner.id] = partner;
+                        self.partner_search_string += self._partner_search_string(partner);
+                    })
 
-                self.contacts = partner_ids_li;
+                    self.contacts = partner_ids_li;
                 }).then(function() {
                     var dialer_combobox = self.$el.find('#dialer,#compose_message').find(".combobox");
                     dialer_combobox.combobox();
@@ -418,13 +456,88 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                 })
             })
             var partners = []
+            var partners_customer = []
+            var partners_suppliers = []
             for (var i = 0, len = Math.min(this.contacts.length, this.limit); i < len; i++) {
+                if(this.contacts[i].customer_rank){
+                    partners_customer.push(this.contacts[i])
+                }
+                if(this.contacts[i].supplier_rank){
+                    partners_suppliers.push(this.contacts[i])
+                }
                 partners.push(this.contacts[i])
             }
-            this.$el.find('#contacts').html(QWeb.render('ringcentral.contacts.search'))
-            this.$el.find('#contacts').append(QWeb.render('ringcentral.contacts', {
-                'partners': partners
+//            this.$el.find('#contacts').html(QWeb.render('ringcentral.contacts.search'))
+            this.$el.find('#contacts').html(QWeb.render('ringcentral.contacts', {
+                'partners': partners,
+                'partners_customer': partners_customer,
+                'partners_suppliers': partners_suppliers
             }))
+        },
+        render_available_extensions: function() {
+            var self = this;
+            self.platform.get('/restapi/v1.0/account/~/presence').then(function(account_details) {
+                var account_json = account_details.json();
+                rpc.query({
+                    model: 'res.partner',
+                    method: 'ac_search_read',
+                    args: [account_json['records']],
+                    context: session.context
+                })
+                var available_extensions = []
+                for (var i = 0, len = account_json.records.length; i < len; i++) {
+                    available_extensions.push(account_json.records[i])
+                }
+                self.$el.find('#available_extensions').html(QWeb.render('ringcentral.available.extensions', {
+                    'available_extensions': available_extensions
+                }))
+            })
+        },
+        render_active_calls : function(){
+            var self = this;
+            self.platform.get('/restapi/v1.0/account/~/active-calls').then(function(active_calls_details) {
+                var active_calls = active_calls_details.json();
+                if(active_calls.records.length){
+                    rpc.query({
+                        model: 'res.partner',
+                        method: 'ac_search_read',
+                        args: [active_calls['records']],
+                        context: session.context
+                    })
+                    var active_calls_list = []
+                    for (var i = 0, len = active_calls.records.length; i < len; i++) {
+                        if(active_calls.records[i].from && active_calls.records[i].to){
+                            active_calls_list.push(active_calls.records[i])
+                        }
+
+                    }
+                    if(active_calls_list){
+                        self.$el.find('#active_calls').html(QWeb.render('ringcentral.active.call', {
+                            'active_calls': active_calls_list
+                        }))
+                    }
+                }
+            }).catch(function(e) {
+                alert('Error : ' + e.message);
+//                self.$el.find('#active_calls').html(QWeb.render('ringcentral.permission.error', {}))
+            });
+        },
+        listen_active_call: function(e){
+            var self = this;
+            if (self.loggedin) {
+                ajax.jsonRpc('/find_extensionID', 'call', {
+                    'phone_num': $(e.currentTarget).data('partner_to_phone')
+                }).then(function(data) {
+                    if(data){
+                        var ext_num = "*80" + data;
+                        self.makeCall(ext_num);
+                    } else {
+                        alert("Sorry, can't find extension of this number!")
+                    }
+                })
+            } else {
+                alert('You are not logged in in RingCentral. Please contact your Administrator.')
+            }
         },
         contact_search: function() {
             var self = this;
@@ -454,7 +567,7 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
         filter_number: function(phone_number) {
             if (phone_number.indexOf('<') > -1) {
                 var start_pos = phone_number.indexOf('<') + 1;
-                var pnumber = phone_number.substring(start_pos, phone_number.indexOf('>', start_pos)) 
+                var pnumber = phone_number.substring(start_pos, phone_number.indexOf('>', start_pos))
                 var ph = pnumber.replace(/\s/g,'');
                 return ph
             } else {
@@ -612,6 +725,7 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                                                     self.extension = res.json();
                                                     self.platform.get('/restapi/v1.0/account/~/extension/~/caller-id').then(function(call_details) {
                                                         var call_details = call_details.json();
+                                                        console.log("call_details::::",call_details)
                                                         if(call_details.byDevice && call_details.byDevice[0] && call_details.byDevice[0].callerId && call_details.byDevice[0].callerId.phoneInfo.phoneNumber) {
                                                             self.message_number = call_details.byDevice[0].callerId.phoneInfo.phoneNumber;
                                                         }else{
@@ -620,12 +734,18 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                                                     })
                                                     self.platform.get('/restapi/v1.0/account/~').then(function(account_details) {
                                                         var account_json = account_details.json();
+                                                        console.log("account_json::::::",account_json)
                                                         self.username = account_json.mainNumber;
                                                         // self.account_id = action_json.id
                                                     })
                                                     self.platform.get('/restapi/v1.0/account/~/extension/~/phone-number?usageType=DirectNumber').then(function(response) {
                                                          var response = response.json();
-                                                         self.message_number = response.records && response.records[0].phoneNumber
+                                                        self.message_number = response.records && response.records[0] && response.records[0].phoneNumber
+                                                        // if(response.byDevice && response.byDevice[0] && response.byDevice[0].callerId && response.byDevice[0].callerId.phoneInfo.phoneNumber) {
+                                                        //     self.message_number = response.records && response.records[0].phoneNumber
+                                                        // }else{
+                                                        //     self.message_number = null
+                                                        // }
                                                      })
                                                     return self.platform.post('/client-info/sip-provision', {
                                                         sipInfo: [{
@@ -826,7 +946,6 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                     dialled_number = pnumber;
                 }
                 if (dialled_number !== undefined && dialled_number) {
-
                     self.makeCall(self.filter_number(dialled_number));
                 } else {
                     alert('Please Enter the Phone Number.')
@@ -848,9 +967,10 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                 alert('You are not logged in in RingCentral. Please contact your Administrator.')
             }
         },
-        onInvite: function(session) {
+        onInvite: async function(session) {
             var self = this;
             var extension = false;
+            var partner_exists = false;
             var data = {}
             var number = session.request.headers.From[0]['raw']
             var incoming_call_number = "+".concat(number.split('+')[1].split('@')[0]);
@@ -861,9 +981,6 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
             }
             if (session.request.to.friendlyName.indexOf('@') > -1) {
                 var call_to_number_list = session.request.to.friendlyName.split('@')[0]
-                    //              if (call_to_number_list.indexOf('*') > -1){
-                    //                  var call_to_number_list = call_to_number_list.split('*')[0]
-                    //              }
             } else {
                 var call_to_number_list = session.request.to.friendlyName
             }
@@ -878,17 +995,40 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                 'from_number': call_from_number_list,
                 'from_name': from_name
             }))
-            var title = 'Incoming Call'
+            await rpc.query({
+                model : 'crm.phonecall',
+                method :'get_partner_name',
+                args : [incoming_call_number]
+            }).then(function(result){
+                data = result
+                _.each(result, function(rec){
+                    var tr = '<tr id="tr-click" data-id=' + rec.id + ' style="cursor: pointer;"><td>' + rec.name + '</td><td>' + rec.phone + '</td></tr>'
+                    $modal_incoming_call.find('#phone_table_list').append(tr);
+                    if(!from_name){
+                        from_name = rec.name
+                    }
+                    if(!call_from_number_list){
+                        call_from_number_list = rec.phone
+                    }
+                    partner_exists = true;
+                })
+                $modal_incoming_call.find('tr').on('click', function(ev) {
+                    window.open(window.location.origin + "#id="+parseInt($(ev.currentTarget).attr('data-id'))+ "&action=" +self.contacts_action + "&model=res.partner&view_type=form", '_blank');
+                })
+            })
+            var title = 'From '
             if (from_name) {
-                title += (' From ' + from_name);
+                title += (from_name);
             }
             if (call_from_number_list) {
-                title += (' Number ' + call_from_number_list);
+                title += (' [' + call_from_number_list + '] ');
             }
             var incoming_dialog = new Dialog(this, {
                 size: 'small',
                 resizable: false,
                 height: 160,
+                backdrop: 'static',
+                keyboard: false,
                 title: _t(title),
                 position: {
                     my: "center",
@@ -900,21 +1040,24 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                 $content: $('<div>', {
                     html: $modal_incoming_call,
                 }),
-            }).open();
-            self._rpc({
-                model : 'crm.phonecall',
-                method :'get_partner_name',
-                args : [incoming_call_number]
-            }).then(function(result){
-                data = result
-                _.each(result, function(rec){
-                    var tr = '<tr id="tr-click" data-id=' + rec.id + ' style="cursor: pointer;"><td>' + rec.name + '</td><td>' + rec.phone + '</td></tr>'
-                    $modal_incoming_call.find('#phone_table_list').append(tr);
-                })
-                $modal_incoming_call.find('tr').on('click', function(ev) {
-                        window.open(window.location.origin + "#id="+parseInt($(ev.currentTarget).attr('data-id'))+ "&action=" +self.contacts_action + "&model=res.partner&view_type=form", '_blank');
-                    })
             })
+            incoming_dialog.opened().then(function(){
+                $(".modal-backdrop").remove();
+                $('.modal-backdrop').hide();
+                if(!partner_exists){
+                    var $modal_title = incoming_dialog.$content.parent().find('.modal-title')
+                    $modal_title.append('<button class="btn btn-primary btn-sm btn-create-contact-from-incoming-call" title="Create New Contact"><i class="fa fa-user-plus"/></button>')
+                }
+                incoming_dialog.$modal.addClass('enable_back')
+                $('.btn-create-contact-from-incoming-call').on('click', function() {
+                    ajax.jsonRpc('/create_new_contact', 'call', {
+                        'caller_number': call_from_number_list,
+                    }).then(function(result){
+                        window.open(window.location.origin + "#id="+parseInt(result)+ "&action=" +self.contacts_action + "&model=res.partner&view_type=form", '_blank');
+                    })
+                });
+            })
+            incoming_dialog.open();
             var acceptOptions = {
                 media: {
                     render: {
@@ -968,41 +1111,57 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                 incoming_dialog.close();
             });
         },
-        makeCall: function(number) {
+        makeCall: async function(number) {
             var self = this;
-            var homeCountry = (self.extension && self.extension.regionalSettings && self.extension.regionalSettings.homeCountry) ?
-                self.extension.regionalSettings.homeCountry.id :
-                null;
-
-            var session = self.webPhone.userAgent.invite(number, {
-                media: {
-                    render: {
-                        remote: document.getElementById('remoteVideo'),
-                        local: document.getElementById('localVideo')
-                    }
-                },
-                fromNumber: self.username,
-                homeCountryId: homeCountry
-            });
-            var to_name = '';
-            for (var i = 0; i < self.contacts.length; i++) {
-                if (self.contacts[i].phone && self.contacts[i].phone.indexOf(number) > -1 || self.contacts[i].mobile && self.contacts[i].mobile.indexOf(number) > -1) {
-                    to_name = self.contacts[i].name
-                    break;
+            if (self.loggedin) {
+                if(!self.message_number){
+                    await self.platform.get('/restapi/v1.0/account/~/extension/~/phone-number?usageType=DirectNumber').then(function(response) {
+                        var response = response.json();
+                        self.message_number = response.records && response.records[0] && response.records[0].phoneNumber
+                    })
                 }
+                if(number == self.message_number){
+                    alert("Sorry! You can not call to own number.")
+                } else {
+                    var homeCountry = (self.extension && self.extension.regionalSettings && self.extension.regionalSettings.homeCountry) ?
+                        self.extension.regionalSettings.homeCountry.id :
+                        null;
+                    var session = self.webPhone.userAgent.invite(number, {
+                        media: {
+                            render: {
+                                remote: document.getElementById('remoteVideo'),
+                                local: document.getElementById('localVideo')
+                            }
+                        },
+                        fromNumber: self.username,
+                        homeCountryId: homeCountry
+                    });
+                    var to_name = '';
+                    for (var i = 0; i < self.contacts.length; i++) {
+                        if (self.contacts[i].phone && self.contacts[i].phone.indexOf(number) > -1 || self.contacts[i].mobile && self.contacts[i].mobile.indexOf(number) > -1) {
+                            to_name = self.contacts[i].name
+                            break;
+                        }
+                    }
+                    self.onAccepted(session, number, self.username, 'out_bound', to_name, number);
+                }
+            } else {
+                alert('You are not loggedin in RingCentral. Please Login.')
             }
-            self.onAccepted(session, number, self.username, 'out_bound', to_name, number);
 
         },
         cloneTemplate: function($tpl) {
             return $($tpl.html());
         },
-        sub_onaccepted: function(self, session, to_number, from_number, type, caller_name, caller_number, data={}) {
+        sub_onaccepted: async function(session, to_number, from_number, type, caller_name, caller_number, data={}) {
+            var self = this;
+            var self1 = this;
+            var partner_exists = false;
             var $modal_outgoing_call = $(QWeb.render('ringcentral.outgoing_call', {
                 'phonecall_about': self.phonecall_about_options
             }))
             if (data && (!data.length || data.length < 1)){
-                self._rpc({
+                await rpc.query({
                     model : 'crm.phonecall',
                     method :'get_partner_name',
                     args : [to_number]
@@ -1011,25 +1170,34 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                     _.each(result, function(rec){
                         var tr = '<tr id="tr-click" data-id=' + rec.id + ' style="cursor: pointer;"><td>' + rec.name + '</td><td>' + rec.phone + '</td></tr>'
                         $modal_outgoing_call.find('#phone_table_list').append(tr);
+                        partner_exists = true;
+                        if(!caller_name){
+                            caller_name = rec.name
+                        }
+                        if(!caller_number){
+                            caller_number = rec.phone
+                        }
                     })
                     $modal_outgoing_call.find('tr').on('click', function(ev) {
                         window.open(window.location.origin + "#id="+parseInt($(ev.currentTarget).attr('data-id'))+ "&action=" +self.contacts_action + "&model=res.partner&view_type=form", '_blank');
-                        })
+                    })
                 })
             }else{
-                _.each(data, function(rec){
+                partner_exists = true;
+                await _.each(data, function(rec){
                     var tr = '<tr id="tr-click" data-id=' + rec.id + ' style="cursor: pointer;"><td>' + rec.name + '</td><td>' + rec.phone + '</td></tr>'
                     $modal_outgoing_call.find('#phone_table_list').append(tr);
                 })
                 $modal_outgoing_call.find('tr').on('click', function(ev) {
-                        window.open(window.location.origin + "#id="+parseInt($(ev.currentTarget).attr('data-id'))+ "&action=" +self.contacts_action + "&model=res.partner&view_type=form", '_blank');
-                        })
+                    window.open(window.location.origin + "#id="+parseInt($(ev.currentTarget).attr('data-id'))+ "&action=" +self.contacts_action + "&model=res.partner&view_type=form", '_blank');
+                })
             }
             var title = "Call In Progress with ";
             if (caller_name) {
                 title += caller_name
-            } else {
-                title += caller_number
+            }
+            if (caller_number){
+                title += ' ['+caller_number+'] ';
             }
             var dialog = new Dialog(this, {
                 size: 'small',
@@ -1041,52 +1209,65 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                     at: "center",
                     of: window
                 },
-                modal: false,
+                backdrop: 'static',
+                keyboard: false,
+                modal: true,
                 buttons: [],
                 $content: $('<div>', {
                     html: $modal_outgoing_call,
                 }),
-            })            // ======= Function for minimize and maximize phonecall modal ======
+            })
+
+            // ======= Function for minimize and maximize phonecall modal ======
             dialog.opened().then(function () {
+//                $(".modal-backdrop").remove();
+                $('.modal-backdrop').hide();
+                dialog.$modal.addClass('enable_back')
                 var $modal_title = dialog.$content.parent().find('.modal-title')
                 $modal_title.before('<button class="btn btn-minimize" title="minimize"><i class="fa fa-window-minimize"></i></button>')
                 $modal_title.before('<button class="btn btn-maximize hidden d-none" title="maximize"><i class="fa fa-window-maximize"></i></button>')
-                
+                if(!partner_exists){
+                    $modal_title.append('<button class="btn btn-primary btn-sm btn-create-contact" title="Create New Contact"><i class="fa fa-user-plus"/></button>')
+                }
                 $('.btn-minimize').on('click', function() {
                     $(this).parents('.modal-content').animate({}, 500);
                     var $header = $(this).parents('.modal-content').find('.modal-header')
                     $(this).addClass('d-none')
                     $header.find('.btn-maximize').removeClass('d-none')
-                    $(this).parents('.modal').removeClass('enable_back')
                     $(this).parents('.modal').addClass('mini_modal')
-                    $(this).parents('.modal').css({'left':'8px', 'top': '516px', 'width': '350px', 'height': '79px'})
+                    $(this).parents('.modal').css({'height': '79px'})
                     $(this).parents('.modal-content').find('.modal-header').addClass('bg-primary')
                     $(this).parents('.modal-content').find('.modal-title').addClass('text-white')
                     $(this).parents('.modal-content').find('.modal-body').addClass('d-none')
                     $(this).parents('.modal-content').find('.modal-footer').addClass('d-none')
-                    $(".modal-backdrop").remove();
+                    $('.modal-backdrop').hide();
                 });
-                
+
                 $('.btn-maximize').click(function() {
                     $(this).parents('.modal-content').animate({}, 500);
                     $(this).parents('.modal').removeClass('mini_modal')
                     $(this).parents('.modal').addClass('enable_back');
-                    $(this).parents('.modal').css({'position': 'fixed','top': '0',
-                        'right': '0', 'bottom': '0', 'left': '0', 'height': '560px', 
-                        'width': '310px'
-                    });
+                    $(this).parents('.modal').css({'height': '560px'});
                     $(this).parents('.modal-content').find('.modal-header').removeClass('bg-primary')
                     $(this).parents('.modal-content').find('.modal-title').removeClass('text-white')
                     $(this).addClass('d-none');
                     $(this).parents('.modal').find('.btn-minimize').removeClass('d-none');
                     $(this).parents('.modal-content').find('.modal-body').removeClass('d-none');
                     $(this).parents('.modal-content').find('.modal-footer').removeClass('d-none');
+                    $('.modal-backdrop').hide();
                 });
-                
+
+                $('.btn-create-contact').click(function() {
+                    ajax.jsonRpc('/create_new_contact', 'call', {
+                        'caller_number': caller_number,
+                    }).then(function(result){
+                        window.open(window.location.origin + "#id="+parseInt(result)+ "&action=" +self.contacts_action + "&model=res.partner&view_type=form", '_blank');
+                    })
+                });
                 //===== make phonecall modal Draggable =====
-                dialog.$content.parents('.modal').draggable({
-                    handle: ".modal-header"
-                });
+                 dialog.$content.parents('.modal').draggable({
+                     handle: ".modal-header"
+                 });
             })
             dialog.open();
             // dialog.on('closed', this, function() {
@@ -1094,6 +1275,7 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
             // });
             setTimeout(function(){
                 $(".modal-backdrop").remove();
+                $('.modal-backdrop').hide();
                 $('.modal').addClass('enable_back');
             }, 500)
             var $info = $modal_outgoing_call.find('.info').eq(0);
@@ -1113,6 +1295,45 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                 clearInterval(interval);
                 dialog.close();
             }
+            $modal_outgoing_call.find('.dtmf-link').on('click', function() {
+//                $(this).addClass('d-none');
+                $modal_outgoing_call.find('.tab-pane').removeClass('active');
+                $modal_outgoing_call.find('.dtmf').removeClass('d-none')
+                $modal_outgoing_call.find('.dtmf-tab').tab('show');
+            });
+            $modal_outgoing_call.find('.available_agents-link').on('click', function() {
+//                $(this).addClass('d-none');
+                $modal_outgoing_call.find('.tab-pane').removeClass('active');
+                $modal_outgoing_call.find('.available_agents').removeClass('d-none')
+                $modal_outgoing_call.find('.available_agents_tab').tab('show');
+                self.platform.get('/restapi/v1.0/account/~/presence').then(function(account_details) {
+                    var account_json = account_details.json();
+                    rpc.query({
+                        model: 'res.partner',
+                        method: 'ac_search_read',
+                        args: [account_json['records']],
+                        context: session.context
+                    })
+                    var available_extensions = []
+                    for (var i = 0, len = account_json.records.length; i < len; i++) {
+                        if(account_json.records[i].presenceStatus == "Available"){
+                            available_extensions.push(account_json.records[i])
+                        }
+
+                    }
+//                    self.$el.find('#available_extensions').html(QWeb.render('ringcentral.available.extensions', {
+//                        'available_extensions': available_extensions
+//                    }))
+                    if(available_extensions){
+                        var option_dict = ""
+                        _.each(available_extensions,function(extension){
+                            option_dict += "<option>"+extension.extension["extensionNumber"]+"</option>"
+                        })
+                        $modal_outgoing_call.find('.available_agents').append(option_dict)
+                    }
+
+                })
+            });
             $modal_outgoing_call.find('.mute').on('click', function() {
                 session.mute();
                 $(this).addClass('d-none');
@@ -1181,12 +1402,6 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                 });
                 $flip.val('');
             });
-            $modal_outgoing_call.find('.dtmf-form').on('submit', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                session.dtmf($dtmf.val().trim());
-                $dtmf.val('');
-            });
             $modal_outgoing_call.find('.hangup').on('click', function() {
                 session.terminate();
                 dialog.close()
@@ -1253,6 +1468,18 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                 });
                 $transfer.val('');
             });
+            $modal_outgoing_call.find('.active-agents-transfer-form').on('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                session.transfer($modal_outgoing_call.find('select.available_agents').eq(0).val().trim()).then(function() {
+                    console.log('Transferred');
+                }).catch(function(e) {
+                    console.error('Transfer failed', e.stack || e);
+                });
+
+                $modal_outgoing_call.find('select.available_agents').eq(0).val('');
+//                $transfer.val('');
+            });
 
             $modal_outgoing_call.find('.flip-form').on('submit', function(e) {
                 e.preventDefault();
@@ -1307,7 +1534,7 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                     _.each(record['records'], function(result) {
                         if (result && result.from && (result.from.phoneNumber == to_number && result.result == 'Accepted' || result.to.phoneNumber == to_number && result.result == 'Call connected')) {
                             var url = self.ringcentral_service_uri.split("/login/");
-                            
+
                             var  duration = result.duration / 60
                             var time = new Date().getTime()
                             var rec_type = ''
@@ -1317,9 +1544,9 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                                 } else {
                                     rec_type = result.recording.type
                                 }
-                                
+
                                 var str = url[0] + '/mobile/media?cmd=downloadMessage&msgid=' + result.recording.id + '&useName=true&time=' + '1554700788480' + '&msgExt=&msgNum=' + result.from.phoneNumber + '&msgDir=' + result.direction + '&msgRecType=' + rec_type + '&msgRecId=' + result.recording.id + '&type=1&download=1&saveMsg=&file=.mp3'
-                                
+
                             }
                             var data_li = []
                                     if (result.legs) {
@@ -1431,7 +1658,7 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                                     } else {
                                         rec_type = result.recording.type
                                     }
-                                    
+
                                     var str = url[0] + '/mobile/media?cmd=downloadMessage&msgid=' + result.recording.id + '&useName=true&time=' + '1554700788480' + '&msgExt=&msgNum=' + result.from.phoneNumber + '&msgDir=' + result.direction + '&msgRecType=' + rec_type + '&msgRecId=' + result.recording.id + '&type=1&download=1&saveMsg=&file=.mp3'
                                     rpc.query({
                                         model: 'crm.phonecall',
@@ -1524,7 +1751,7 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                     self.access_token = obj.access_token;
                     self.refresh_token = obj.refresh_token;
                 }).then(function() {
-                    self.sub_onaccepted(self, session, to_number, from_number, type, caller_name, caller_number)
+                    self.sub_onaccepted(session, to_number, from_number, type, caller_name, caller_number)
                 }).catch(function(e) {
                     console.log('Error: ' + e.message)
                         //                  if ($(currentTarget).find('.menu-close:visible').length){
@@ -1532,7 +1759,7 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                     //                  }
                 })
             } else {
-                self.sub_onaccepted(self, session, to_number, from_number, type, caller_name, caller_number, data = data)
+                self.sub_onaccepted(session, to_number, from_number, type, caller_name, caller_number, data = data)
             }
         },
         fetch_call_log_details: function(self) {
@@ -1966,7 +2193,8 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
                         if (self.messages.indexOf(message.id) == -1) {
                             rec_list.push(message)
                             Notification.requestPermission().then(function(result) {
-                                new Notification('Hi, New Message Received')
+                                var msg_str = 'Hi, New Message Received From ' + message.from.phoneNumber
+                                new Notification(msg_str)
                             });
 
                             if ($('#messgae_contant').length) {
@@ -2038,7 +2266,6 @@ odoo.define('ringcentral.ringcentralPanel', function(require) {
         _createAutocomplete: function() {
             var selected = this.element.children(":selected"),
                 value = selected.val() ? selected.text() : "";
-
             this.input = $("<input>")
                 .appendTo(this.wrapper)
                 .val(value)

@@ -9,4 +9,4 @@ access_in_out_tagged_documented,in_out_tagged_documented_user,model_in_out_tagge
 access_res_users,res_users_user,base.model_res_users,base.group_user,1,1,0,0
 access_phonecall_about,crm_phocall_about,model_crm_phonecall_about,,1,1,0,0
 access_crm_call_activity,access_crm_call_activity,model_crm_call_activity,,1,1,1,1
-access_ringcentral_synch,access_ringcentral_synch,model_ringcentral_synch,base.group_user,1,1,1,1
+access_ringcentral_sync,access_ringcentral_sync,model_ringcentral_sync,base.group_user,1,1,1,1

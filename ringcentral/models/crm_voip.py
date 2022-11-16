@@ -12,14 +12,84 @@ from odoo import api, fields, models
 
 class CrmPhonecallAbout(models.Model):
     _name = "crm.phonecall.about"
+    _description = 'CRM PhoneCall About'
 
     name = fields.Char("Reason of the call", required=True)
 
 
 class CrmPhonecall(models.Model):
-
     _name = "crm.phonecall"
+    _description = 'CRM PhoneCall'
     _order = "id DESC"
+
+    @api.model
+    def fetch_agents(self):
+        if self.env.user.company_id and self.env.user.company_id.ringcentral_server:
+            headers = {
+                "accept": "application/json",
+            }
+            if self.env.user.ringcentral_access_token:
+                headers["authorization"] = (
+                    "Bearer " + self.env.user.ringcentral_access_token
+                )
+
+            # for the Presence Call
+            response = requests.get(
+                str(self.env.user.company_id.ringcentral_server)
+                + "/restapi/v1.0/account/~/presence",
+                headers=headers
+            )
+            response = response.json()
+            res_partner = self.env['res.partner']
+            for record in response.get('records'):
+
+                partner_id = res_partner.search([('extension_number', '=',
+                                     record.get('extension').get(
+                                         'extensionNumber'))], limit=1)
+                if not partner_id:
+                    res_partner.create({
+                        'extension_id': record.get('extension').get(
+                                         'id'),
+                        'extension_number': record.get('extension').get(
+                                         'extensionNumber'),
+                        'name': record.get('extension').get(
+                                         'extensionNumber')
+                    })
+
+            # for the Phone number call
+            response = requests.get(
+                str(self.env.user.company_id.ringcentral_server)
+                + "/restapi/v1.0/account/~/phone-number",
+                headers=headers
+            )
+            response = response.json()
+            res_partner = self.env['res.partner']
+            for record in response.get('records'):
+                partner_id = res_partner.search(['|',('extension_number', '=',
+                                     record.get('extension') and record.get('extension').get(
+                                         'extensionNumber')),
+                                                 ('phone', '=',
+                                                  record.get('phoneNumber'))
+                                                 ], limit=1)
+                name = str(record.get('phoneNumber'))
+                if record.get('extension'):
+                    name += ' - ' + record.get('extension').get(
+                                         'extensionNumber')
+                vals = {
+                        'extension_id': record.get('extension') and record.get('extension').get(
+                                         'id'),
+                        'phone': record.get('phoneNumber'),
+                        'ringcentral_id': record.get('id'),
+                        'extension_number': record.get('extension') and record.get('extension').get(
+                                         'extensionNumber') or '',
+                        'name': name,
+                    }
+                if not partner_id:
+                    res_partner.create(vals)
+                    continue
+                vals.pop('name')
+                partner_id.write(vals)
+
 
     def _valid_field_parameter(self, field, name):
         # allow tracking on models inheriting from 'crm.phonecall'
@@ -204,7 +274,7 @@ class CrmPhonecall(models.Model):
             if not rec_data:
                 try:
                     vals = {
-                        "name": rec_vals.get("from").get("phoneNumber"),
+                        "name": rec_vals.get("from").get("phoneNumber") or "",
                         "partner_phone": rec_vals.get("to")[0].get("phoneNumber"),
                         "date": rec_vals.get("creationTime"),
                         "description": rec_vals.get("subject"),
@@ -227,7 +297,7 @@ class CrmPhonecall(models.Model):
                             file_path = open(path, "wb")
                             file_path.write(response.content)
                             file_path.close()
-                            buf = base64.encodestring(open(path, "rb").read())
+                            buf = base64.encodebytes(open(path, "rb").read())
                             attachment_list.append(
                                 (
                                     0,
@@ -367,12 +437,13 @@ class CrmPhonecall(models.Model):
 
 class CrmCallActivity(models.Model):
     _name = "crm.call.activity"
+    _description = 'CRM Call Activity'
 
     name = fields.Char("Reason")
     type = fields.Selection(
         [("in_bound", "In Bound"), ("out_bound", "Out Bound")], string="Type"
     )
-    call_type = fields.Char("Type")
+    call_type = fields.Char("Call Type")
     leg_type = fields.Char("leg Type")
     from_number = fields.Char("From number")
     to_number = fields.Char("To number")
@@ -384,6 +455,7 @@ class CrmCallActivity(models.Model):
 
 class InOutTaggedDocumented(models.Model):
     _name = "in.out.tagged.documented"
+    _description = 'In Out Tag'
 
     name = fields.Char("Name")
 

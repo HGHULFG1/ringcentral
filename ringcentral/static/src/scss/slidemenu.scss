@@ -20,8 +20,11 @@ Slide Menu
     position: fixed;
     width: 300px;
     height: 100%;
-    z-index: 3;
+    z-index: 9999;
     left: 100%;
+
+/*     transform: translate(0px);
+    transition: 5s ease-in-out; */
     /*   padding-top: 30px; */
     /*     padding-top: 115px; */
     padding-top: 159px;
@@ -64,6 +67,7 @@ Slide Menu
         background-color: #c2c3c1;
         padding: 0px;
         margin: 0px;
+//         border: 3px solid #5eadcb;
         .menu-item {
             font-size: 26px;
             border-top: 1px solid #aaaba9;
@@ -74,6 +78,7 @@ Slide Menu
             left: 0px;
             width: 100%;
             background-color: #dbdcd9;
+            color: #e3811e;
             .menu-close {
                 display: none;
                 position: absolute;
@@ -91,14 +96,14 @@ Slide Menu
                 display: none;
             }
             .menu-icon {
-                padding: 7px 13px;
+                padding: 7px 20px !important;
                 display: inline-block;
                 text-align: center;
             }
             &.active {
                 color: #ffffff;
                 background-color: #5b97d8;
-                top: 0px;
+                top: -4px !important;
                 position: absolute;
                 text-decoration: none;
                 .menu-content,
@@ -106,16 +111,20 @@ Slide Menu
                     display: inline-block;
                 }
             }
+            &:hover{
+                color:#fff;
+            }
         }
     }
     .menu-panels {
         left: 0px;
         position: absolute;
-        height: 100%;
+/*         height: 100%; */
         width: 250px;
         background-color: #ffffff;
         border-left: 1px solid #cccccc;
         border-bottom: 1px solid #cccccc;
+        border: 3px solid #5eadcb;
         .menu-panel {
             display: none;
             padding: 5px;
@@ -134,7 +143,6 @@ Slide Menu
         }
     }
 }
-
 /* .o_web_client > .o_main .o_main_content .o_control_panel,
 .o_web_client .navbar{
     z-index: 4;

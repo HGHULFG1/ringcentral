@@ -14,9 +14,9 @@
 /*Slide Menu styles*/
 .slide-menu {
     position: fixed;
-    width: 300px;
+    width: 310px;
     height: 100%;
-    z-index: 3;
+    z-index: 99999;
     left: 100%;
     /*   padding-top: 30px; */
     /*     padding-top: 115px; */
@@ -77,9 +77,6 @@
     left: auto;
     top: auto;
 }
-/*.enable_back.modal-backdrop {
-    display:none;
-}*/
 .enable_back .modal-dialog{
     padding: initial;
 }
@@ -121,7 +118,7 @@
 .slide-menu .menu-items .menu-item.active {
     color: #fff;
     background-color: #5b97d8;
-    top: -4px;
+    top: -4px !important;
     position: absolute;
     text-decoration: none;
 }
@@ -136,6 +133,7 @@
     width: 250px;
     background-color: #fff;
     border-left: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
 }
 .slide-menu .menu-panels .menu-panel {
     display: none;

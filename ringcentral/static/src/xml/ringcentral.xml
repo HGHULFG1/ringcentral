@@ -15,6 +15,13 @@
         >
            Sync Ringcentral
         </button>
+        <button
+            t-if="widget.modelName == 'crm.phonecall'"
+            type="button"
+            class=" btn btn-secondary oe_ringcentral_sync_agents"
+        >
+           Fetch Agents
+        </button>
     </t>
     <t t-extend="ListView.buttons">
         <t t-jquery="button.o_list_button_discard" t-operation="after">
@@ -33,6 +40,7 @@
             </div>
         </div>
     </t>
+
     <t t-name="ringcentral.message_box">
         <div class="modal-body" id="scroll_messge">
             <div id="messgae_contant">
@@ -250,12 +258,17 @@
                         >Transfer</a>
                     </li>
                     <li role="presentation" class="nav-item">
-                        <a
+                        <!--<a
                             href="#dtmf"
                             aria-controls="fax"
                             role="tab"
                             class="nav-link"
                             data-toggle="tab"
+                        >DTMF</a>-->
+                        <a
+                            href="#"
+                            role="tab"
+                            class="nav-link dtmf-link"
                         >DTMF</a>
                     </li>
                     <li role="presentation" class="nav-item">
@@ -276,7 +289,15 @@
                             data-toggle="tab"
                         >Open Contact Details</a>
                     </li>
+                    <li role="presentation" class="nav-item">
+                        <a
+                            href="#"
+                            class="nav-link available_agents-link"
+                            role="tab"
+                        >Available Agents</a>
+                    </li>
                 </ul>
+
                 <!-- Tab panes -->
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane active" id="flip">
@@ -321,7 +342,7 @@
                             </form>
                         </div>
                     </div>
-                    <div role="tabpanel" class="tab-pane" id="dtmf">
+                    <div role="tabpanel" class="tab-pane dtmf-tab" >
                         <div class='text-center'>
                             <form class="form-inline dtmf-form">
                                 <div class="input-group select_folder_name mt8">
@@ -337,6 +358,28 @@
                                             style='font-size: 12px;'
                                             type="submit"
                                         >Send</button>
+                                    </span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane available_agents_tab" >
+                        <div class='text-center'>
+                            <form class="form-inline active-agents-transfer-form">
+                                <div class="input-group select_folder_name mt8">
+                                    <!--<input
+                                        type="text"
+                                        class="form-control input-sm available_agents"
+                                        name="available_agents" id="available_agents"
+                                        placeholder="+12345678900"
+                                    />-->
+                                    <select name="available_agents" class="form-control available_agents" style="height:initial;"/>
+                                    <span class="input-group-btn">
+                                        <button
+                                            class="btn btn-primary btn-sm"
+                                            style='font-size: 12px;'
+                                            type="submit"
+                                        >Transfer</button>
                                     </span>
                                 </div>
                             </form>
@@ -420,52 +463,238 @@
         <div
             class='mt8'
             id='show_contacts'
+        >
+            <ul class="nav nav-tabs row" role="tablist">
+                <li role="presentation" class="active">
+                    <a
+                        href="#partners_panel"
+                        aria-controls="all"
+                        role="tab"
+                        data-toggle="tab"
+                    > All
+                    </a>
+                </li>
+                <li t-if="partners_customer" role="presentation" class="active">
+                    <a
+                        href="#partners_customer_panel"
+                        aria-controls="all"
+                        role="tab"
+                        data-toggle="tab"
+                    > Customers
+                    </a>
+                </li>
+                <li t-if="partners_suppliers" role="presentation">
+                    <a
+                        href="#partners_suppliers_panel"
+                        aria-controls="all"
+                        role="tab"
+                        data-toggle="tab"
+                    >Suppliers
+                    </a>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="partners_panel">
+                    <table class='table table-hover'>
+                        <t t-foreach='partners' t-as='partner'>
+                            <tr>
+                                <td>
+                                    <t t-if="partner['image_128']">
+                                        <img t-attf-src="/web/image/res.partner/{{ partner.id }}/avatar_128" style="width: 64px; height: 64px; object-fit: contain;" ></img>
+                                    </t>
+                                    <t t-if="!partner['image_128']">
+                                        <img t-attf-src="/web/image/res.partner/{{ partner.id }}/avatar_128" style="width: 64px; height: 64px; object-fit: contain;" ></img>
+                                    </t>
+                                </td>
+                                <td
+                                    style='cursor: pointer;'
+                                    class='partner_details'
+                                    t-att-data-partner_image='partner["image_128"]'
+                                    t-att-data-partner_email='partner["email"]'
+                                    t-att-data-partner_name='partner["name"]'
+                                    t-att-data-partner_phone='partner["phone"]'
+                                >
+                                    <div class='row'>
+                                        <div class='col-md-12'>
+                                            <t t-esc='partner["name"]' />
+                                        </div>
+                                    </div>
+                                    <div class='row'>
+                                        <div class='col-md-12'>
+                                            <t t-if='partner["phone"]'>
+                                                <t t-esc='partner["phone"]' />
+                                            </t>
+                                        </div>
+                                        <t t-if='partner["mobile"]'>
+                                            <div class='col-md-12'>
+                                                <t t-esc='partner["mobile"]' />
+                                            </div>
+                                        </t>
+                                    </div>
+                                </td>
+                            </tr>
+                        </t>
+                    </table>
+                </div>
+                <div t-if="partners_customer" role="tabpanel" class="tab-pane active" id="partners_customer_panel">
+                    <table class='table table-hover'>
+                        <t t-foreach='partners_customer' t-as='partner'>
+                            <tr>
+                                <td>
+                                    <t t-if="partner['image_128']">
+                                        <img t-attf-src="/web/image/res.partner/{{ partner.id }}/avatar_128" style="width: 64px; height: 64px; object-fit: contain;" ></img>
+                                    </t>
+                                    <t t-if="!partner['image_128']">
+                                        <img t-attf-src="/web/image/res.partner/{{ partner.id }}/avatar_128" style="width: 64px; height: 64px; object-fit: contain;" ></img>
+                                    </t>
+                                </td>
+                                <td
+                                    style='cursor: pointer;'
+                                    class='partner_details'
+                                    t-att-data-partner_image='partner["image_128"]'
+                                    t-att-data-partner_email='partner["email"]'
+                                    t-att-data-partner_name='partner["name"]'
+                                    t-att-data-partner_phone='partner["phone"]'
+                                >
+                                    <div class='row'>
+                                        <div class='col-md-12'>
+                                            <t t-esc='partner["name"]' />
+                                        </div>
+                                    </div>
+                                    <div class='row'>
+                                        <div class='col-md-12'>
+                                            <t t-if='partner["phone"]'>
+                                                <t t-esc='partner["phone"]' />
+                                            </t>
+                                        </div>
+                                        <t t-if='partner["mobile"]'>
+                                            <div class='col-md-12'>
+                                                <t t-esc='partner["mobile"]' />
+                                            </div>
+                                        </t>
+                                    </div>
+                                </td>
+                            </tr>
+                        </t>
+                    </table>
+                </div>
+                <div t-if="partners_suppliers" role="tabpanel" class="tab-pane" id="partners_suppliers_panel">
+                    <table class='table table-hover'>
+                        <t t-foreach='partners_suppliers' t-as='partner'>
+                            <tr>
+                                <td>
+                                    <t t-if="partner['image_128']">
+                                        <img t-attf-src="/web/image/res.partner/{{ partner.id }}/avatar_128" style="width: 64px; height: 64px; object-fit: contain;" ></img>
+                                    </t>
+                                    <t t-if="!partner['image_128']">
+                                        <img t-attf-src="/web/image/res.partner/{{ partner.id }}/avatar_128" style="width: 64px; height: 64px; object-fit: contain;" ></img>
+                                    </t>
+                                </td>
+                                <td
+                                    style='cursor: pointer;'
+                                    class='partner_details'
+                                    t-att-data-partner_image='partner["image_128"]'
+                                    t-att-data-partner_email='partner["email"]'
+                                    t-att-data-partner_name='partner["name"]'
+                                    t-att-data-partner_phone='partner["phone"]'
+                                >
+                                    <div class='row'>
+                                        <div class='col-md-12'>
+                                            <t t-esc='partner["name"]' />
+                                        </div>
+                                    </div>
+                                    <div class='row'>
+                                        <div class='col-md-12'>
+                                            <t t-if='partner["phone"]'>
+                                                <t t-esc='partner["phone"]' />
+                                            </t>
+                                        </div>
+                                        <t t-if='partner["mobile"]'>
+                                            <div class='col-md-12'>
+                                                <t t-esc='partner["mobile"]' />
+                                            </div>
+                                        </t>
+                                    </div>
+                                </td>
+                            </tr>
+                        </t>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </t>
+    <t t-name="ringcentral.available.extensions">
+        <div
+            class='mt8'
+            id='show_contacts'
             style="overflow-y: auto;max-height: 550px;overflow-x: hidden;"
         >
+            <i class="fa fa-refresh" style="float: right;"/>
             <table class='table table-hover'>
-                <tr t-foreach='partners' t-as='partner'>
-                    <td>
-                        <t t-if="partner['image_128']">
-                            <img
-                                class="img img-responsive"
-                                width='20'
-                                height='20'
-                                t-att-src="'data:image/jpg;base64,' + partner['image_128']"
-                            />
-                        </t>
-                        <t t-if="!partner['image_128']">
-                            <img
-                                class='img img-responsive'
-                                width='20'
-                                height='20'
-                                src="/base/static/img/avatar_grey.png"
-                            />
-                        </t>
-                    </td>
+                <tr t-foreach='available_extensions' t-as='extension'>
                     <td
                         style='cursor: pointer;'
-                        class='partner_details'
-                        t-att-data-partner_image='partner["image_128"]'
-                        t-att-data-partner_email='partner["email"]'
-                        t-att-data-partner_name='partner["name"]'
-                        t-att-data-partner_phone='partner["phone"]'
+                        class='extensions_details'
+                        t-att-data-partner_email='extension["id"]'
+                        t-att-data-partner_name='extension["label"]'
+                        t-att-data-partner_phone='extension["phoneNumber"]'
                     >
                         <div class='row'>
                             <div class='col-md-12'>
-                                <t t-esc='partner["name"]' />
+                                <t t-esc='extension["label"]' />
+                            </div>
+                        </div>
+                        <div class='row'>
+                            <div t-if='extension.extension["extensionNumber"]' class='col-md-12'>
+                                <t t-esc='extension.extension["extensionNumber"]' /> <span>-</span>
+                                <t t-esc='extension["presenceStatus"]' />
+                            </div>
+                            <!--<t t-if='extension["id"]'>
+                                <div class='col-md-12'>
+                                Id :     <t t-esc='extension["id"]' />
+                                </div>
+                            </t>-->
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </t>
+    <t t-name="ringcentral.active.call">
+        <div
+            class='mt8'
+            id='show_active_calls'
+            style="overflow-y: auto;max-height: 550px;overflow-x: hidden;"
+        >
+            <i class="fa fa-refresh" style="float: right;"/>
+            <table class='table table-hover'>
+                <tr t-foreach='active_calls' t-as='active_call'>
+                    <td
+                        style='cursor: pointer;'
+                        class='active_call_details'
+                        t-att-data-partner_from_phone='active_call["from"].phoneNumber'
+                        t-att-data-partner_to_phone='active_call["to"].phoneNumber'
+                        t-att-data-result='active_call["result"]'
+                        t-att-data-sessionId='active_call["sessionId"]'
+                        t-att-data-type='active_call["type"]'
+                    >
+                        <div class='row'>
+                            <div class='col-md-12'>
+                                From : <t t-esc='active_call["from"].phoneNumber' />
+                                <t t-if="active_call['from'].extensionNumber" t-esc='active_call["from"].extensionNumber' />
                             </div>
                         </div>
                         <div class='row'>
                             <div class='col-md-12'>
-                                <t t-if='partner["phone"]'>
-                                    <t t-esc='partner["phone"]' />
-                                </t>
+                             To : <t t-if="active_call['to'].phoneNumber" t-esc='active_call["to"].phoneNumber' />
+                                <t t-if="active_call['to'].extensionNumber" t-esc='active_call["to"].extensionNumber' />
                             </div>
-                            <t t-if='partner["mobile"]'>
-                                <div class='col-md-12'>
-                                    <t t-esc='partner["mobile"]' />
-                                </div>
-                            </t>
+                        </div>
+                        <div class='row'>
+                            <div t-if='active_call["result"]' class='col-md-12'>
+                              Status : <t t-esc='active_call["result"]' />
+                                <i t-if='active_call["result"]=="In Progress"' class="fa fa-phone-square" style="color:green;"/>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -893,7 +1122,7 @@
     <t t-name="ringcentral.messages_partner">
         <ul class="list-group list_overflow">
             <t t-foreach='all_messages' t-as='message_phone_number'>
-                <li class="list-group-item" style="width: 155%;">
+                <li t-if="message_phone_number['phoneNumber']" class="list-group-item" style="width: 155%;">
                     <div class='row'>
                         <div class='col-md-2'>
                             <span>
@@ -1104,6 +1333,54 @@
                             <i class="fa fa-times" />
                         </div>
                     </li>
+                    <!--<li
+                        class="menu-item menu_item_li"
+                        data-target="#on_call_dialog"
+                        title="On Call Dialog"
+                        data-index="6"
+                    >
+                        <div class="menu-icon">
+                            <i class="fa fa-volume-control-phone" />
+                        </div>
+                        <div class="menu-content">
+                            <span>Ongoing Call</span>
+                        </div>
+                        <div class="menu-close">
+                            <i class="fa fa-times" />
+                        </div>
+                    </li>-->
+                    <li
+                        class="menu-item menu_item_li"
+                        data-target="#available_extensions"
+                        title="Available Contacts"
+                        data-index="6"
+                    >
+                        <div class="menu-icon">
+                            <i class="fa fa-users" />
+                        </div>
+                        <div class="menu-content">
+                            <span>Available Agents</span>
+                        </div>
+                        <div class="menu-close">
+                            <i class="fa fa-times" />
+                        </div>
+                    </li>
+                    <li
+                        class="menu-item menu_item_li"
+                        data-target="#active_calls"
+                        title="Active Call"
+                        data-index="7"
+                    >
+                        <div class="menu-icon">
+                            <i class="fa fa-bars" />
+                        </div>
+                        <div class="menu-content">
+                            <span>Active Call</span>
+                        </div>
+                        <div class="menu-close">
+                            <i class="fa fa-times" />
+                        </div>
+                    </li>
                 </ul>
                 <div class="menu-panels">
                     <div id="dialer" class="menu-panel">
@@ -1265,7 +1542,7 @@
                     <div id="compose_message" class="menu-panel">
                         <div class="panel-body">
                             <div id='compose_message_child_1'>
-                                <div class="row">;
+                                <div class="row">
                                     <div class="col-md-12">
                                         <div class="form-group">
                                             <select class='form-control combobox'>
@@ -1290,7 +1567,7 @@
                                         <div class="form-group">
                                             <input
                                                 type="file"
-                                                class="form-control"
+                                                class=""
                                                 placeholder="Type any text to send"
                                                 id='msg_image'
                                                 multiple="True"
@@ -1316,6 +1593,13 @@
                             </div>
                         </div>
                     </div>
+                   <!-- <div id="on_call_dialog" class="menu-panel">
+                        <div class="panel-body">
+                            <div class="row mb8">
+
+                            </div>
+                        </div>
+                    </div>-->
                     <div id="messages" class="menu-panel">
                         <!-- Nav tabs -->
                         <ul class="nav nav-tabs" role="tablist">
@@ -1363,6 +1647,7 @@
                     <div id="contacts" class="menu-panel">
                         <h4>Loading Contacts</h4>
                     </div>
+
                     <div id="call_log" class="menu-panel">
                         <ul class="nav nav-tabs" role="tablist">
                             <li role="presentation" class="active">
@@ -1398,8 +1683,26 @@
                             >No Records Found</div>
                         </div>
                     </div>
+                    <div id="available_extensions" class="menu-panel">
+                        <div class="pt8 pb8">
+                            <i class="fa fa-refresh" style="float: right;"/>
+                            <h4>Loading Available Agents</h4>
+                        </div>
+                    </div>
+                    <div id="active_calls" class="menu-panel">
+                        <div class="pt8 pb8">
+                            <i class="fa fa-refresh" style="float: right;"/>
+                            <h4>Loading Active Calls</h4>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <div id="ring_central_panel_container" style="position: fixed;bottom: 0%;z-index: 99999;right: 0px;">
+                <img src="/ringcentral/static/src/img/Ringcentral-logo.png" class="in_webinar_navigation" style="height: 55px;width: 55px;background: #fff;border: solid 2px#e3811e;"></img>
+            </div>
         </div>
+       <!-- <div id="ring_central_panel_container" style="position: fixed;bottom: 0%;z-index: 999;right: 0px;">
+            <img src="/ringcentral/static/src/img/Ringcentral-logo.png" class="in_webinar_navigation" style="height: 50px;width: 50px;background: #fff;border: solid 3px #5eadcb;"></img>
+        </div>-->
     </t>
 </templates>

@@ -55,6 +55,7 @@
         &.active,
         .menu-icon:hover {
             background-color: #5b97d8 !important;
+
         }
     }
 }
@@ -201,4 +202,16 @@
 }
 .msg_time_send {
     font-size: 10px;
+}
+.ui-widget.ui-autocomplete {
+    z-index: 9999999 !important;
+}
+#partners_panel{
+    overflow-y: auto;
+    max-height: 75vh;
+    overflow-x: hidden;
+}
+
+.ringcentral_sidebar .form-control:focus{
+    border-color: #c5c5c5;
 }

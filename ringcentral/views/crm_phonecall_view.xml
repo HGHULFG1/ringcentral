@@ -13,6 +13,12 @@
                     <page string="Message Log">
                         <field name="msg_log_ids" />
                     </page>
+                    <page string="Ringcentral">
+                        <group>
+                            <field name="extension_number"/>
+                            <field name="extension_id"/>
+                        </group>
+                    </page>
                 </page>
             </field>
         </record>

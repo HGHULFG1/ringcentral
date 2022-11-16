@@ -27,9 +27,18 @@ odoo.define('ringcentral.ringcentral_login', function(require) {
             this.$buttons.on('click', '.oe_ringcentral_sync', function() {
                 self.do_action({
                     type: 'ir.actions.act_window',
-                    res_model: 'ringcentral.synch',
+                    res_model: 'ringcentral.sync',
                     views: [[false, 'form']],
                     target: 'new'
+                })
+            })
+            this.$buttons.on('click', '.oe_ringcentral_sync_agents', function() {
+                rpc.query({
+                    model : 'crm.phonecall',
+                    method: 'fetch_agents',
+                    args: []
+                }).then(function(result){
+                    console.log("=============")
                 })
             })
         }

@@ -7,8 +7,18 @@ from odoo import _, fields, models
 from odoo.exceptions import UserError
 
 
-class RingcentralSynch(models.TransientModel):
+class RingcentralSync(models.TransientModel):
     _name = "ringcentral.synch"
+    _description = 'Ringcentral Sync'
+
+    # select_filter = fields.Selection(
+    #     [("all", "All"), ("5", "5 Days"), ("10", "10 Days"), ("1", "Today")],
+    #     default="all",
+    # )
+
+class RingcentralSync(models.TransientModel):
+    _name = "ringcentral.sync"
+    _description = 'Ringcentral Sync'
 
     select_filter = fields.Selection(
         [("all", "All"), ("5", "5 Days"), ("10", "10 Days"), ("1", "Today")],

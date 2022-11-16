@@ -28,3 +28,4 @@ class ResCompany(models.Model):
         help="Use ringcentral API server URL with out using protocol.",
     )
     ringcentral_app_port = fields.Char("Ringcentral Port", help="Use current odoo Port")
+

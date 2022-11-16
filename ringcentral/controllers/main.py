@@ -21,3 +21,18 @@ class RingcentralController(http.Controller):
             "ringcentral_base_url": base_url,
             "contacts_action": str(contacts_action_id),
         }
+
+    @http.route("/find_extensionID", type="json", auth="user")
+    def find_extensionID(self, **kw):
+        partner = request.env["res.partner"].sudo().search([('phone','=',kw.get('phone_num'))])
+        if partner:
+            if partner.extension_number:
+                return partner.extension_number
+            return False
+        return False
+
+    @http.route("/create_new_contact", type="json", auth="user")
+    def create_new_contact(self, **kw):
+        res = request.env["res.partner"].sudo().create({"name":kw.get("caller_number"),
+                                                        "phone":kw.get("caller_number")})
+        return res.id
